@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Chef - AI Assistant</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        claude: {
+                            bg: '#F3F1EC',
+                            accent: '#D97757',
+                            accentHover: '#C26243',
+                            text: '#21201C',
+                            card: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
+                        sans: ['system-ui', '-apple-system', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-claude-bg text-claude-text h-screen flex overflow-hidden font-sans antialiased relative">
+
+    <!-- Выбор языка (Стильный переключатель) -->
+    <div class="absolute top-6 right-6 sm:right-10 z-50 flex bg-gray-200/50 backdrop-blur-sm border border-gray-200 rounded-full p-1 shadow-inner">
+        <button onclick="changeLanguage('ru')" id="btn-lang-ru" class="lang-btn px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 text-gray-500 hover:text-gray-800">RU</button>
+        <button onclick="changeLanguage('kk')" id="btn-lang-kk" class="lang-btn px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 text-gray-500 hover:text-gray-800">KK</button>
+        <button onclick="changeLanguage('en')" id="btn-lang-en" class="lang-btn px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 text-gray-500 hover:text-gray-800">EN</button>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- ЭКРАН 1: ЛОГИН И РЕГИСТРАЦИЯ              -->
+    <!-- ========================================= -->
+    <div id="screen-auth" class="w-full flex items-center justify-center relative z-10 transition-opacity duration-500">
+        <div class="bg-claude-card p-10 sm:p-14 rounded-2xl shadow-sm border border-gray-200 w-full max-w-md relative overflow-hidden">
+            
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-serif font-semibold mb-2">Smart Chef</h1>
+                <p data-i18n="app_subtitle" class="text-gray-500 text-sm">Ваш ИИ-су-шеф, управляемый жестами</p>
+            </div>
+
+            <div class="relative">
+                
+                <!-- ФОРМА ВХОДА (ЛОГИН) -->
+                <form id="login-form" class="space-y-5 transition-all duration-300 ease-in-out">
+                    <div>
+                        <label data-i18n="email_label" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-claude-accent focus:border-claude-accent outline-none transition-colors" placeholder="chef@mail.com">
+                    </div>
+                    <div>
+                        <label data-i18n="password_label" class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-claude-accent focus:border-claude-accent outline-none transition-colors" placeholder="••••••••">
+                            <button type="button" class="toggle-password absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button data-i18n="login_btn" type="submit" class="w-full bg-claude-accent hover:bg-claude-accentHover text-white font-medium py-3 rounded-lg transition-colors shadow-sm mt-2">
+                        Войти
+                    </button>
+                    
+                    <p class="text-center text-sm text-gray-600 mt-4">
+                        <span data-i18n="no_account">Нет аккаунта?</span> <a href="#" id="to-register" data-i18n="to_register" class="text-claude-accent font-medium hover:underline">Зарегистрироваться</a>
+                    </p>
+                </form>
+
+                <!-- ФОРМА РЕГИСТРАЦИИ -->
+                <form id="register-form" class="space-y-5 transition-all duration-300 ease-in-out absolute top-0 left-0 w-full opacity-0 pointer-events-none translate-x-8">
+                    <div>
+                        <label data-i18n="name_label" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                        <input type="text" id="register-name" data-i18n="placeholder_name" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-claude-accent focus:border-claude-accent outline-none transition-colors" placeholder="Иван Иванов">
+                    </div>
+                    <div>
+                        <label data-i18n="email_label" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="register-email" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-claude-accent focus:border-claude-accent outline-none transition-colors" placeholder="chef@mail.com">
+                    </div>
+                    <div>
+                        <label data-i18n="password_label" class="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                        <div class="relative">
+                            <input type="password" id="register-password" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-claude-accent focus:border-claude-accent outline-none transition-colors" placeholder="••••••••">
+                            <button type="button" class="toggle-password absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button data-i18n="register_btn" type="submit" class="w-full bg-claude-accent hover:bg-claude-accentHover text-white font-medium py-3 rounded-lg transition-colors shadow-sm mt-2">
+                        Создать аккаунт
+                    </button>
+                    
+                    <p class="text-center text-sm text-gray-600 mt-4">
+                        <span data-i18n="have_account">Уже есть аккаунт?</span> <a href="#" id="to-login" data-i18n="to_login" class="text-claude-accent font-medium hover:underline">Войти</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- ЭКРАН 2: ЧАТ С ИИ                         -->
+    <!-- ========================================= -->
+    <div id="screen-chat" class="w-full h-full flex flex-col hidden bg-[#FAFAF8] relative z-10">
+
+                    <!-- Плавающие кнопки (Сайдбар) -->
+          <div class="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex flex-col gap-3">
+              <!-- Кнопка истории рецептов -->
+              <button onclick="toggleRecipeBook()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-claude-accent border border-gray-100 hover:scale-105" title="История рецептов">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              </button>
+              
+              <!-- Кнопка Нового чата (Домой) -->
+              <button onclick="startNewChat()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-claude-accent border border-gray-100 hover:scale-105" title="Начать заново (Новый рецепт)">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+              </button>
+
+              <!-- Кнопка Ачивок (XP) -->
+              <button onclick="toggleAchieveSidebar()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-yellow-500 border border-yellow-100 hover:scale-105 font-bold flex flex-col items-center justify-center relative w-12 h-12" title="Мои достижения">
+                  <span id="xp-btn-text" class="text-[10px] uppercase leading-none">0 XP</span>
+              </button>
+          </div>
+
+                      <!-- Сайдбар с достижениями -->
+            <div id="achieve-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-serif text-xl font-bold text-gray-800">Достижения</h3>
+                    <button onclick="toggleAchieveSidebar()" class="text-gray-400 hover:text-gray-700 font-bold text-xl">&times;</button>
+                </div>
+                <div id="achieve-list" class="flex-1 overflow-y-auto flex flex-col bg-gray-50">
+                    <!-- контент генерируется в ui.js -->
+                </div>
+            </div>
+
+            <!-- Сайдбар с историей -->
+          <div id="recipe-book-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+              <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                  <h3 class="font-serif text-xl font-bold text-gray-800">Книга рецептов</h3>
+                  <button onclick="toggleRecipeBook()" class="text-gray-400 hover:text-gray-700 font-bold text-xl">&times;</button>
+              </div>
+              <div id="recipe-book-list" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gray-50">
+                  <div class="text-gray-400 text-sm text-center mt-10">Тут будут сохраненные рецепты...</div>
+              </div>
+          </div>
+
+
+        <!-- Основная зона чата -->
+        <div class="flex-1 flex flex-col relative h-full overflow-hidden">
+
+            <!-- Контейнер для сообщений -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-10 flex flex-col">
+                
+                <!-- ПУСТОЕ СОСТОЯНИЕ (Приветствие) -->
+                <div id="chat-empty-state" class="m-auto text-center max-w-2xl w-full">
+                    <h2 class="text-4xl sm:text-5xl font-serif text-gray-800 mb-4 transition-all leading-tight">
+                        <span data-i18n="welcome_chef">Здравствуйте, </span><br/><span id="user-name-display" class="text-claude-accent font-semibold">Шеф</span>!
+                    </h2>
+                    <p data-i18n="chat_prompt" class="text-lg text-gray-500 mb-10">Что мы будем готовить сегодня?</p>
+                </div>
+
+            </div>
+
+            <!-- Зона ввода (Input) -->
+            <div class="p-4 sm:p-6 w-full max-w-3xl mx-auto mb-2 sm:mb-4 bg-gradient-to-t from-[#FAFAF8] to-transparent">
+                <form id="chat-form" class="relative flex items-end bg-white border border-gray-300 shadow-md rounded-2xl overflow-hidden focus-within:border-claude-accent focus-within:ring-1 focus-within:ring-claude-accent transition-all">
+                    <textarea id="chat-input" rows="1" data-i18n="input_placeholder" class="w-full max-h-32 py-4 pl-6 pr-14 bg-transparent outline-none resize-none text-gray-800 placeholder-gray-400" placeholder="Напишите ингредиенты или блюдо..."></textarea>
+                    
+                    <button type="submit" id="chat-submit-btn" class="absolute right-3 bottom-3 p-2 bg-claude-accent hover:bg-claude-accentHover text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </form>
+                <p data-i18n="ai_disclaimer" class="text-center text-xs text-gray-400 mt-3">Пожалуйста, укажите, если у вас есть аллергия на какие-либо продукты.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- ЭКРАН 3: РЕЖИМ ГОТОВКИ (GESTURE CONTROL)  -->
+    <!-- ========================================= -->
+    <div id="screen-cooking" class="w-full h-full flex flex-col md:flex-row hidden bg-[#FAFAF8] relative z-10 p-4 sm:p-8 gap-6 opacity-0 transition-opacity duration-700">
+        
+        <!-- ЛЕВАЯ ЧАСТЬ: Камера и Жесты -->
+        <div class="w-full md:w-1/3 flex-none flex flex-col gap-2 md:gap-4 shrink-0">
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2 md:p-4 flex flex-col">
+                  <!-- Контейнер видео потока -->
+                  <div class="bg-gray-900 rounded-xl relative overflow-hidden flex items-center justify-center h-[180px] sm:h-[300px]">
+                      <video id="webcam" class="absolute w-full h-full object-cover opacity-50" autoplay playsinline></video>
+                      <canvas id="output_canvas" class="absolute w-full h-full z-20"></canvas>
+                  </div>
+  
+                  <div class="mt-2 md:mt-4 bg-gray-50 p-2 md:p-4 rounded-xl border border-gray-100 text-center h-[70px] md:h-[90px] flex flex-col justify-center overflow-y-auto">
+                      <p data-i18n="recognized_gesture" class="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">РАСПОЗНАННЫЙ ЖЕСТ</p>
+                      <p id="gesture-debug" data-i18n="gesture_waiting" class="font-bold text-claude-accent text-sm md:text-xl leading-tight">Ожидание жеста...</p>
+                  </div>
+              </div>
+              
+              <button onclick="endCooking()" data-i18n="end_cooking_btn" class="w-full py-2 md:py-4 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition font-medium border border-red-100 shadow-sm text-sm md:text-base">
+                  Завершить готовку
+              </button>
+          </div>
+
+        <!-- ПРАВАЯ ЧАСТЬ: Книга рецептов -->
+        <div class="w-full md:w-2/3 flex-1 flex flex-col min-h-0 perspective-1000 pl-0 md:pl-2 overflow-hidden">
+            <style>
+                .perspective-1000 { perspective: 1400px; }
+                .origin-left { transform-origin: left center; }
+                
+                /* Эффект стопки страниц (Современный, легкий) */
+                .book-pages {
+                    background-color: #FFFFFF;
+                    box-shadow: 
+                        -1px 0 3px rgba(0,0,0,0.02),
+                        3px 3px 0 -1px #FAFAFA,
+                        3px 3px 0 0 #F3F4F6,
+                        6px 6px 0 -1px #FDFDFD,
+                        6px 6px 0 0 #E5E7EB,
+                        9px 9px 0 -1px #FFFFFF,
+                        9px 9px 0 0 #D1D5DB;
+                    border-radius: 4px 16px 16px 4px;
+                }
+
+                /* Легкая тень от переплета слева */
+                .book-spine-shadow {
+                    background: linear-gradient(to right, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 10%, transparent 30%);
+                }
+                
+                @keyframes turnPageNextOut {
+                    0% { transform: rotateY(0deg); opacity: 1; filter: brightness(1); }
+                    100% { transform: rotateY(-90deg); opacity: 0; filter: brightness(0.9); }
+                }
+                @keyframes turnPageNextIn {
+                    0% { transform: rotateY(90deg); opacity: 0; filter: brightness(1.1); }
+                    100% { transform: rotateY(0deg); opacity: 1; filter: brightness(1); }
+                }
+                @keyframes turnPagePrevOut {
+                    0% { transform: rotateY(0deg); opacity: 1; }
+                    100% { transform: rotateY(90deg); opacity: 0; }
+                }
+                @keyframes turnPagePrevIn {
+                    0% { transform: rotateY(-90deg); opacity: 0; }
+                    100% { transform: rotateY(0deg); opacity: 1; }
+                }
+            </style>
+            
+            <div class="book-pages flex-1 flex flex-col relative overflow-hidden border-l border-gray-200">
+                
+                <!-- Прогресс бар (Современный) -->
+                <div class="h-1 bg-gray-50 w-full relative z-20">
+                    <div id="recipe-progress" class="h-full bg-claude-accent transition-all duration-500" style="width: 25%;"></div>
+                </div>
+
+                <!-- Содержимое страницы книги (с 3D эффектом) -->
+                <div id="recipe-page-content" onclick="nextStep()" title="Кликните, чтобы перелистнуть" class="flex-1 flex flex-col relative cursor-pointer origin-left transition-colors z-10" style="transform-style: preserve-3d;">
+                    
+                    <!-- Тень сгиба страницы (переплет) -->
+                    <div class="absolute left-0 top-0 bottom-0 w-16 book-spine-shadow pointer-events-none z-0"></div>
+                    
+                    <div class="p-4 sm:p-14 flex-1 overflow-y-auto relative z-10 text-center flex flex-col justify-start sm:justify-center items-center">
+                        
+                        <!-- Номер шага (Минимализм) -->
+                        <span id="step-counter" class="text-claude-accent font-semibold tracking-widest uppercase text-xs sm:text-sm mb-6">Шаг 1 из 4</span>
+                        
+                        <!-- Заголовок (Журнальный стиль) -->
+                        <h2 id="step-title" class="text-3xl sm:text-5xl lg:text-6xl font-serif text-gray-800 mb-4 sm:mb-8 leading-tight tracking-tight">Подготовьте ингредиенты</h2>
+                        
+                        <!-- Минималистичный разделитель -->
+                        <div class="w-12 h-[2px] bg-claude-accent/30 mb-4 sm:mb-8 rounded-full"></div>
+
+                        <!-- Описание (Чистый легко читаемый шрифт) -->
+                        <p id="step-desc" class="text-gray-600 font-sans font-light text-lg sm:text-2xl lg:text-3xl leading-relaxed max-w-3xl">
+                            Вам понадобится 500г картофеля, 3 яйца и 100мл молока. Нарежьте картофель мелкими кубиками.
+                        </p>
+                        
+                        <!-- Таймер (Современная капсула) -->
+                        <div id="step-timer-container" class="mt-12 hidden">
+                            <div class="inline-flex items-center bg-white border border-gray-100 px-6 py-3 rounded-full shadow-sm hover:shadow-md transition-shadow">
+                                <svg class="w-6 h-6 text-claude-accent mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span id="step-timer-display" class="text-2xl font-semibold text-gray-800 font-mono tracking-tight">15:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки симуляции жестов (Неброские) -->
+                <div class="bg-transparent p-4 sm:px-10 sm:py-6 flex justify-between items-center z-20 absolute bottom-0 left-0 right-0 pointer-events-none">
+                    <button onclick="prevStep(); event.stopPropagation();" data-i18n="btn_prev" class="pointer-events-auto px-4 py-2 text-gray-400 hover:text-gray-800 font-medium rounded-lg transition text-sm">← Назад</button>
+                    <button onclick="nextStep(); event.stopPropagation();" data-i18n="btn_next" class="pointer-events-auto px-4 py-2 text-gray-400 hover:text-gray-800 font-medium rounded-lg transition text-sm">Далее →</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Подключение скриптов -->
+    <!-- Сначала грузим словарь, чтобы страница сразу перевелась -->
+    <script src="js/i18n.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="js/audio.js"></script>
+</body>
+</html>

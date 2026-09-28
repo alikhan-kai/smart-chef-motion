@@ -1,0 +1,8 @@
+node_modules/
+__pycache__/
+.env
+.venv/
+venv/
+*.log
+.DS_Store
+favicon.jpg
