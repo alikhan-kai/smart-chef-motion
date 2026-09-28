@@ -9,8 +9,8 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.4",
     "python-dotenv>=1.0",
-    "openai>=1.50",
     "langchain-openai>=1.0",
+    "langchain>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -20,6 +20,12 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.6",
     "mypy>=1.11",
+]
+anthropic = [
+    "langchain-anthropic>=1.0",
+]
+google = [
+    "langchain-google-genai>=4.0",
 ]
 
 [build-system]

@@ -1,19 +1,17 @@
-"""respond_to_message() tests with a mocked LangChain ChatOpenAI. Never calls the real API."""
+"""respond_to_message() tests with a fake LangChain chat model. Never calls a real API."""
 
-import json
-from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
-from openai import APITimeoutError
 
 from llm.chat_responder import respond_to_message
 from llm.chat_schemas import HistoryMessage
 from llm.errors import UpstreamTimeoutError, ValidationFailedError
 from llm.schemas import RawIngredient, RawRecipe, RawStep
+from llm.tests.fake_chat_model import FakeChatModel
 
 CURRENT_RECIPE = RawRecipe(
     error=None,
@@ -80,38 +78,38 @@ REVISE_JSON = {
 }
 
 
-def _fake_response(text: str) -> AIMessage:
-    return AIMessage(content=[{"type": "text", "text": text}])
-
-
-def _patch_ainvoke(mock: AsyncMock) -> Any:
-    return patch.object(ChatOpenAI, "ainvoke", mock)
+class APITimeoutError(Exception):
+    """Named like the OpenAI/Anthropic SDK error; matched by name, not import."""
 
 
 @pytest.fixture(autouse=True)
 def _configure_settings(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
     monkeypatch.delenv("REVISE_USE_WEB_SEARCH", raising=False)
     monkeypatch.delenv("REVISE_HISTORY_MESSAGES", raising=False)
 
 
+def _use(model: FakeChatModel) -> Any:
+    return patch("llm.chat_responder.build_chat_model", return_value=model)
+
+
 @pytest.mark.asyncio
 async def test_respond_to_message_answer_case() -> None:
-    mock_create = AsyncMock(return_value=_fake_response(json.dumps(ANSWER_JSON)))
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[ANSWER_JSON])
+    with _use(model):
         result = await respond_to_message(CURRENT_RECIPE, [], "нужно ли солить?")
 
     assert result.intent == "answer"
     assert result.operations is None
     assert result.answer_text == ANSWER_JSON["answer_text"]
-    mock_create.assert_awaited_once()
+    model.structured.assert_awaited_once()
+    assert model.schema is not None and model.schema["title"] == "chat_response"
 
 
 @pytest.mark.asyncio
 async def test_respond_to_message_revise_case() -> None:
-    mock_create = AsyncMock(return_value=_fake_response(json.dumps(REVISE_JSON)))
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[REVISE_JSON])
+    with _use(model):
         result = await respond_to_message(CURRENT_RECIPE, [], "убери соль")
 
     assert result.intent == "revise"
@@ -123,13 +121,12 @@ async def test_respond_to_message_revise_case() -> None:
 
 @pytest.mark.asyncio
 async def test_respond_to_message_web_search_off_by_default() -> None:
-    mock_create = AsyncMock(return_value=_fake_response(json.dumps(ANSWER_JSON)))
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[ANSWER_JSON])
+    with _use(model):
         await respond_to_message(CURRENT_RECIPE, [], "привет")
 
-    kwargs = mock_create.call_args.kwargs
-    assert "tools" not in kwargs
-    assert kwargs["response_format"]["json_schema"]["name"] == "chat_response"
+    assert model.tools is None
+    model.text.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -137,41 +134,40 @@ async def test_respond_to_message_web_search_enabled_via_setting(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("REVISE_USE_WEB_SEARCH", "true")
-    mock_create = AsyncMock(return_value=_fake_response(json.dumps(ANSWER_JSON)))
-    with _patch_ainvoke(mock_create):
-        await respond_to_message(CURRENT_RECIPE, [], "привет")
+    model = FakeChatModel(text=["Соль: до 5 г в день."], structured=[ANSWER_JSON])
+    with _use(model):
+        await respond_to_message(CURRENT_RECIPE, [], "сколько соли можно?")
 
-    kwargs = mock_create.call_args.kwargs
-    assert kwargs["tools"] == [{"type": "web_search"}]
+    assert model.tools == [{"type": "web_search"}]
+    model.text.assert_awaited_once()
+    structured_messages = model.structured.call_args.args[0]
+    assert "Соль: до 5 г в день." in structured_messages[-1].content
 
 
 @pytest.mark.asyncio
-async def test_respond_to_message_retries_once_on_invalid_json_then_succeeds() -> None:
-    responses = [_fake_response("not valid json"), _fake_response(json.dumps(ANSWER_JSON))]
-    mock_create = AsyncMock(side_effect=responses)
-    with _patch_ainvoke(mock_create):
+async def test_respond_to_message_retries_once_on_invalid_output_then_succeeds() -> None:
+    model = FakeChatModel(structured=[OutputParserException("bad json"), ANSWER_JSON])
+    with _use(model):
         result = await respond_to_message(CURRENT_RECIPE, [], "привет")
 
     assert result.intent == "answer"
-    assert mock_create.await_count == 2
+    assert model.structured.await_count == 2
 
 
 @pytest.mark.asyncio
 async def test_respond_to_message_fails_after_retry() -> None:
-    mock_create = AsyncMock(side_effect=[_fake_response("nope"), _fake_response("still nope")])
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[OutputParserException("nope"), {"intent": "???"}])
+    with _use(model):
         with pytest.raises(ValidationFailedError):
             await respond_to_message(CURRENT_RECIPE, [], "привет")
 
-    assert mock_create.await_count == 2
+    assert model.structured.await_count == 2
 
 
 @pytest.mark.asyncio
 async def test_respond_to_message_timeout_maps_to_domain_error() -> None:
-    mock_create = AsyncMock(
-        side_effect=APITimeoutError(request=SimpleNamespace())  # type: ignore[arg-type]
-    )
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[APITimeoutError("timed out")])
+    with _use(model):
         with pytest.raises(UpstreamTimeoutError):
             await respond_to_message(CURRENT_RECIPE, [], "привет")
 
@@ -187,11 +183,11 @@ async def test_respond_to_message_truncates_history_to_configured_n(
         HistoryMessage(role="user", content="сообщение 3"),
         HistoryMessage(role="assistant", content="сообщение 4"),
     ]
-    mock_create = AsyncMock(return_value=_fake_response(json.dumps(ANSWER_JSON)))
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[ANSWER_JSON])
+    with _use(model):
         await respond_to_message(CURRENT_RECIPE, history, "последнее сообщение")
 
-    input_messages = mock_create.call_args.args[0]
+    input_messages = model.structured.call_args.args[0]
     # system message + last 2 history messages + the new user message = 4
     assert len(input_messages) == 4
     assert isinstance(input_messages[0], SystemMessage)
@@ -207,12 +203,12 @@ async def test_respond_to_message_truncates_history_to_configured_n(
 
 @pytest.mark.asyncio
 async def test_respond_to_message_includes_patch_error_in_retry_prompt() -> None:
-    mock_create = AsyncMock(return_value=_fake_response(json.dumps(REVISE_JSON)))
-    with _patch_ainvoke(mock_create):
+    model = FakeChatModel(structured=[REVISE_JSON])
+    with _use(model):
         await respond_to_message(
             CURRENT_RECIPE, [], "убери соль", patch_error="unknown ingredient id 'xyz'"
         )
 
-    last_message = mock_create.call_args.args[0][-1].content
+    last_message = model.structured.call_args.args[0][-1].content
     assert "unknown ingredient id 'xyz'" in last_message
     assert "убери соль" in last_message
