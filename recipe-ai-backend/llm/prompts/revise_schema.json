@@ -1,0 +1,810 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "chat_response",
+        "strict": true,
+        "schema": {
+            "$defs": {
+                "AddIngredientOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "add_ingredient",
+                            "type": "string"
+                        },
+                        "ingredient": {
+                            "$ref": "#/$defs/RawIngredient"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "ingredient"
+                    ],
+                    "type": "object"
+                },
+                "AddStepOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "add_step",
+                            "type": "string"
+                        },
+                        "after_step_number": {
+                            "type": "integer"
+                        },
+                        "step": {
+                            "$ref": "#/$defs/RawStep"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "after_step_number",
+                        "step"
+                    ],
+                    "type": "object"
+                },
+                "IngredientAmountUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "amount",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "IngredientFormUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "form",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "IngredientNameUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "name",
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "IngredientUnitUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "unit",
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "MetaEquipmentUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "equipment",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "MetaNotesUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "notes",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "MetaServingsUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "servings",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "MetaTitleUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "title",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "MetaTotalTimeMinutesUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "total_time_minutes",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "RawFat": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "type": "string"
+                        },
+                        "amount": {
+                            "type": "number"
+                        },
+                        "unit": {
+                            "enum": [
+                                "ст. л.",
+                                "ч. л.",
+                                "г",
+                                "мл"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "amount",
+                        "unit"
+                    ],
+                    "type": "object"
+                },
+                "RawIngredient": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "amount": {
+                            "anyOf": [
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        },
+                        "unit": {
+                            "type": "string"
+                        },
+                        "form": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "name",
+                        "amount",
+                        "unit",
+                        "form"
+                    ],
+                    "type": "object"
+                },
+                "RawStep": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "step_number": {
+                            "type": "integer"
+                        },
+                        "action": {
+                            "type": "string"
+                        },
+                        "ingredients_used": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        "time_minutes": {
+                            "anyOf": [
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        },
+                        "passive": {
+                            "type": "boolean"
+                        },
+                        "heat_level": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "сильный",
+                                        "средний",
+                                        "слабый",
+                                        "минимальный"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        },
+                        "place": {
+                            "type": "string"
+                        },
+                        "salt": {
+                            "type": "boolean"
+                        },
+                        "fat": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/RawFat"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        },
+                        "final_action": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "step_number",
+                        "action",
+                        "ingredients_used",
+                        "time_minutes",
+                        "passive",
+                        "heat_level",
+                        "place",
+                        "salt",
+                        "fat",
+                        "final_action"
+                    ],
+                    "type": "object"
+                },
+                "RemoveIngredientOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "remove_ingredient",
+                            "type": "string"
+                        },
+                        "ingredient_id": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "ingredient_id"
+                    ],
+                    "type": "object"
+                },
+                "RemoveStepOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "remove_step",
+                            "type": "string"
+                        },
+                        "step_number": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "step_number"
+                    ],
+                    "type": "object"
+                },
+                "StepActionUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "action",
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepFatUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "fat",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/RawFat"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepFinalActionUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "final_action",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepHeatLevelUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "heat_level",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "сильный",
+                                        "средний",
+                                        "слабый",
+                                        "минимальный"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepIngredientsUsedUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "ingredients_used",
+                            "type": "string"
+                        },
+                        "value": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepPassiveUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "passive",
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepPlaceUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "place",
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepSaltUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "salt",
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "StepTimeMinutesUpdate": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "field": {
+                            "const": "time_minutes",
+                            "type": "string"
+                        },
+                        "value": {
+                            "anyOf": [
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "required": [
+                        "field",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "UpdateIngredientOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "update_ingredient",
+                            "type": "string"
+                        },
+                        "ingredient_id": {
+                            "type": "string"
+                        },
+                        "fields": {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/IngredientNameUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/IngredientAmountUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/IngredientUnitUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/IngredientFormUpdate"
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "ingredient_id",
+                        "fields"
+                    ],
+                    "type": "object"
+                },
+                "UpdateMetaOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "update_meta",
+                            "type": "string"
+                        },
+                        "fields": {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/MetaTitleUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/MetaServingsUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/MetaTotalTimeMinutesUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/MetaEquipmentUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/MetaNotesUpdate"
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "fields"
+                    ],
+                    "type": "object"
+                },
+                "UpdateStepOp": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "op": {
+                            "const": "update_step",
+                            "type": "string"
+                        },
+                        "step_number": {
+                            "type": "integer"
+                        },
+                        "fields": {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/StepActionUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepIngredientsUsedUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepTimeMinutesUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepPassiveUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepHeatLevelUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepPlaceUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepSaltUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepFatUpdate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/StepFinalActionUpdate"
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "op",
+                        "step_number",
+                        "fields"
+                    ],
+                    "type": "object"
+                }
+            },
+            "additionalProperties": false,
+            "properties": {
+                "intent": {
+                    "enum": [
+                        "answer",
+                        "revise"
+                    ],
+                    "type": "string"
+                },
+                "answer_text": {
+                    "type": "string"
+                },
+                "operations": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/$defs/UpdateIngredientOp"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/AddIngredientOp"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/RemoveIngredientOp"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/UpdateStepOp"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/AddStepOp"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/RemoveStepOp"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/UpdateMetaOp"
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "intent",
+                "answer_text",
+                "operations"
+            ],
+            "type": "object"
+        }
+    }
+}
