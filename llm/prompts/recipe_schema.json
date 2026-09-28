@@ -1,0 +1,211 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "recipe",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "error",
+                "title",
+                "servings",
+                "total_time_minutes",
+                "equipment",
+                "source_urls",
+                "notes",
+                "ingredients",
+                "steps"
+            ],
+            "properties": {
+                "error": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "title": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "servings": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "total_time_minutes": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "equipment": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "source_urls": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "notes": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "ingredients": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "id",
+                            "name",
+                            "amount",
+                            "unit",
+                            "form"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "amount": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "unit": {
+                                "type": "string"
+                            },
+                            "form": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "steps": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "step_number",
+                            "action",
+                            "ingredients_used",
+                            "time_minutes",
+                            "passive",
+                            "heat_level",
+                            "place",
+                            "salt",
+                            "fat",
+                            "final_action"
+                        ],
+                        "properties": {
+                            "step_number": {
+                                "type": "integer"
+                            },
+                            "action": {
+                                "type": "string"
+                            },
+                            "ingredients_used": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "time_minutes": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "passive": {
+                                "type": "boolean"
+                            },
+                            "heat_level": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "enum": [
+                                    "максимальный огонь",
+                                    "средний огонь",
+                                    "малый огонь",
+                                    "минимальный огонь",
+                                    null
+                                ]
+                            },
+                            "place": {
+                                "type": "string"
+                            },
+                            "salt": {
+                                "type": "boolean"
+                            },
+                            "fat": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "additionalProperties": false,
+                                "required": [
+                                    "type",
+                                    "amount",
+                                    "unit"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "unit": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ст. л.",
+                                            "ч. л.",
+                                            "г",
+                                            "мл"
+                                        ]
+                                    }
+                                }
+                            },
+                            "final_action": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
