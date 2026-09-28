@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CameraFeed } from './components/CameraFeed';
 import type { GestureEvent, GestureErrorEvent, GestureName } from './hooks/useHandTracking';
+import { playGestureSound, playAlarm, stopAlarm } from './utils/audio';
 
 export default function App() {
   const [lastGesture, setLastGesture] = useState<string>('—');
@@ -12,11 +13,23 @@ export default function App() {
   const [timerMinutes, setTimerMinutes] = useState(5);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300);
+  const [showVfx, setShowVfx] = useState(false);
 
   // Countdown
   useEffect(() => {
     if (!timerRunning || timeLeft <= 0) return;
-    const id = setInterval(() => setTimeLeft(t => t - 1), 1000);
+    const id = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          // Таймер закончился!
+          setTimerRunning(false);
+          setShowVfx(true);
+          playAlarm();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
     return () => clearInterval(id);
   }, [timerRunning, timeLeft]);
 
@@ -31,10 +44,23 @@ export default function App() {
       const clamped = Math.max(0.15, Math.min(0.85, e.value));
       const idx = Math.round(((clamped - 0.15) / 0.7) * (MINUTE_OPTIONS.length - 1));
       const mins = MINUTE_OPTIONS[MINUTE_OPTIONS.length - 1 - idx]; // верх = больше
-      setTimerMinutes(mins);
-      setTimeLeft(mins * 60);
+      
+      if (mins !== timerMinutes) {
+        setTimerMinutes(mins);
+        setTimeLeft(mins * 60);
+        playGestureSound('PointUpTick'); // Щелчок при смене минут
+      }
       return;
     }
+
+    // Если был запущен будильник, любой другой жест его отключит
+    if (showVfx) {
+      setShowVfx(false);
+      stopAlarm();
+    }
+
+    // Проигрываем уникальный звук для каждого обычного жеста
+    playGestureSound(e.gesture);
 
     // Для остальных жестов — логируем
     const LABELS: Record<string, string> = {
@@ -116,7 +142,14 @@ export default function App() {
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           {/* ═══ Камера ═══ */}
           <div style={{ flex: '0 0 auto' }}>
-            <CameraFeed onGesture={handleGesture} onError={handleError} />
+            <CameraFeed 
+              onGesture={handleGesture} 
+              onError={handleError} 
+              showVfx={showVfx} 
+              timerOpen={timerOpen}
+              timerRunning={timerRunning}
+              timeLeft={timeLeft}
+            />
 
             <div style={{ ...card, marginTop: 16, fontSize: 13 }}>
               <p style={labelStyle}>Доступные жесты</p>
