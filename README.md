@@ -67,6 +67,10 @@ Compose запускает основной интерфейс и корнево
 Папка `recipe-ai-backend/` содержит отдельную более раннюю LangChain-версию без
 маршрутов журналов; для проверки финального интерфейса используйте корневой бэкенд.
 
+Step-header compatibility: older recipes may omit `steps[].header`; the backend
+loads it as `null`, and the UI keeps its fallback step title. New generated
+headers are preserved. The strict AI output schema still requires `header`.
+
 ### 1. Настройка Backend (FastAPI)
 1. Выполняйте следующие команды из корня репозитория, где находятся
    `backend/`, `llm/`, `pyproject.toml` и `.env.example`.

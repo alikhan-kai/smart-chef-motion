@@ -1,8 +1,10 @@
-"""Pydantic models mirroring llm/prompts/recipe_schema.json exactly.
+"""Pydantic models matching the fields in llm/prompts/recipe_schema.json.
 
 llm/prompts/recipe_schema.json is the single source of truth. If the schema file
 changes, these models must be updated to match; llm/tests/test_schema_parity.py
 fails when they diverge.
+The runtime accepts a missing step header for older saved recipes; the strict
+model-output schema still requires that field on newly generated steps.
 """
 
 from typing import Literal
@@ -41,7 +43,7 @@ class RawStep(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     step_number: int
-    header: str | None
+    header: str | None = None
     action: str
     ingredients_used: list[str]
     time_minutes: float | None

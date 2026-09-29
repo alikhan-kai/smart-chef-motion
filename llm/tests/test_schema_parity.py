@@ -39,6 +39,14 @@ def test_step_required_fields_match_raw_step() -> None:
     assert set(step_schema["required"]) == set(RawStep.model_fields.keys())
 
 
+def test_header_stays_required_in_model_output_but_optional_for_legacy_data() -> None:
+    step_schema = _load_schema()["properties"]["steps"]["items"]
+    assert "header" in step_schema["required"]
+    assert set(step_schema["properties"]["header"]["type"]) == {"string", "null"}
+    assert not RawStep.model_fields["header"].is_required()
+    assert RawStep.model_fields["header"].default is None
+
+
 def test_fat_required_fields_match_raw_fat() -> None:
     schema = _load_schema()
     fat_schema = schema["properties"]["steps"]["items"]["properties"]["fat"]

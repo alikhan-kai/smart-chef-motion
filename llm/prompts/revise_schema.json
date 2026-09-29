@@ -322,6 +322,16 @@
                         "step_number": {
                             "type": "integer"
                         },
+                        "header": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        },
                         "action": {
                             "type": "string"
                         },
@@ -389,6 +399,7 @@
                     },
                     "required": [
                         "step_number",
+                        "header",
                         "action",
                         "ingredients_used",
                         "time_minutes",
