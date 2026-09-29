@@ -1,0 +1,24 @@
+services:
+  backend:
+    image: smart-chef-backend:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    env_file:
+      - ${BACKEND_ENV_FILE:-./.env}
+    ports:
+      - "127.0.0.1:8000:8000"
+    init: true
+    restart: unless-stopped
+
+  frontend:
+    image: smart-chef-frontend:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy

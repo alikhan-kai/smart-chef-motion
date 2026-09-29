@@ -1,0 +1,14 @@
+# Root build context is only for the static frontend.
+**
+!Dockerfile.frontend
+!index.html
+!favicon.png
+!css/
+!css/**
+!js/
+!js/**
+!deploy/
+!deploy/api-config.js
+!deploy/nginx.conf
+**/.env
+**/.env.*

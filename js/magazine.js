@@ -4,7 +4,7 @@
 // toggleRecipeBook/loadRecipeBook), which is the user's full request
 // history - a magazine is a separate, publishable subset of it.
 
-const MAGAZINE_API_BASE = 'http://localhost:8000';
+const MAGAZINE_API_BASE = window.CHEF_API_BASE;
 
 function getChefId() {
     try {
