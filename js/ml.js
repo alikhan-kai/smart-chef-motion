@@ -39,7 +39,7 @@ export async function initML() {
 
     if (!video || !canvas) return;
 
-    debugEl.innerText = "Загрузка ИИ (MediaPipe)...";
+    debugEl.innerText = window.translations[localStorage.getItem('chefLang') || 'ru']['ml_loading'] || 'Загрузка ИИ (MediaPipe)...';
 
     // 1. Загружаем модель (FilesetResolver)
     const vision = await FilesetResolver.forVisionTasks(
@@ -56,7 +56,7 @@ export async function initML() {
         numHands: 1
     });
 
-    debugEl.innerText = "Запуск камеры...";
+    debugEl.innerText = window.translations[localStorage.getItem('chefLang') || 'ru']['ml_camera_starting'] || 'Запуск камеры...';
 
     // 2. Включаем веб-камеру
     try {
@@ -68,7 +68,7 @@ export async function initML() {
         });
     } catch (err) {
         console.error(err);
-        debugEl.innerText = "Ошибка доступа к камере";
+        debugEl.innerText = window.translations[localStorage.getItem('chefLang') || 'ru']['ml_camera_error'] || 'Ошибка доступа к камере';
         debugEl.classList.add("text-red-500");
     }
 }
@@ -130,13 +130,13 @@ function predictWebcam(video, canvas, debugEl) {
                     if (!ringFolded || !pinkyFolded || !middleFolded) {
                         showError(debugEl, 'Сожмите остальные пальцы в кулак, чтобы распознать жест "Лайк"');
                     } else if (!inCooldown) {
-                        fireGesture(debugEl, '👍 Лайк (Вперед)', () => window.nextStep(), now);
+                        fireGesture(debugEl, window.translations[localStorage.getItem('chefLang') || 'ru']['ml_gesture_like'] || '👍 Лайк (Вперед)', () => window.nextStep(), now);
                     }
                 } 
                 else if (categoryName === 'Thumb_Down') {
                     // Дизлайк -> Предыдущий шаг
                     if (!inCooldown) {
-                        fireGesture(debugEl, '👎 Дизлайк (Назад)', () => window.prevStep(), now);
+                        fireGesture(debugEl, window.translations[localStorage.getItem('chefLang') || 'ru']['ml_gesture_dislike'] || '👎 Дизлайк (Назад)', () => window.prevStep(), now);
                     }
                 }
                 else if (categoryName === 'Victory') {
@@ -197,6 +197,6 @@ function fireGesture(el, name, actionFn, now) {
 }
 
 function resetDebug(el) {
-    el.innerText = "Ожидание жеста...";
+    el.innerText = window.translations[localStorage.getItem('chefLang') || 'ru']['gesture_waiting'] || 'Ожидание жеста...';
     el.className = "font-semibold text-gray-400 text-lg transition-all";
 }

@@ -1,124 +1,94 @@
-# smart-chef-motion
-Smart Chef - кулинарный ассистент, управляемый жестами через веб-камеру. Разработано для ADMIT HACKATHON (трек Motion).
+# 🧑‍🍳 Smart Chef — Ваш ИИ-су-шеф, управляемый жестами
 
-## Backend
+**Smart Chef** — это интерактивное веб-приложение, которое решает вечную проблему любого кулинара: грязные руки во время готовки. Наше приложение позволяет сгенерировать рецепт через ИИ, а затем пошагово управлять процессом готовки (перелистывать шаги, запускать таймеры) исключительно с помощью жестов перед веб-камерой, не пачкая клавиатуру или экран телефона.
 
-Backend for building a recipe book from free-form user requests: user request → LLM with web
-search → strict JSON recipe → programmatic assembly → final recipe object.
+Проект создан в рамках хакатона **ADMIT HACKATHON (MOTION: КАМЕРА ВМЕСТО ДЖОЙСТИКА)**.
 
-### Setup
+---
 
-```bash
-uv sync --extra dev
-cp .env.example .env   # then fill in OPENAI_API_KEY
-```
+## ✨ Ключевые возможности проекта
 
-### Environment variables
+Мы реализовали полноценный пользовательский сценарий от начала и до конца, добавив множество уникальных фичей:
 
-| Variable                  | Required | Default | Description                                                |
-|----------------------------|----------|---------|--------------------------------------------------------------|
-| `OPENAI_API_KEY`           | yes      | —       | OpenAI API key.                                              |
-| `OPENAI_MODEL`              | yes      | —       | Model name used for both generation steps.                   |
-| `OPENAI_TIMEOUT_SECONDS`    | no       | `60`    | Timeout for OpenAI API calls.                                 |
-| `TWO_STEP_MODE`             | no       | `false` | If true, splits generation into a plain-text web-search step followed by a JSON-conversion step, instead of one combined call. |
-| `REVISE_MODEL`              | no       | `OPENAI_MODEL` | Model used for the chat/revision call (`respond_to_message`). |
-| `REVISE_USE_WEB_SEARCH`     | no       | `false` | If true, the chat/revision call also gets the `web_search` tool. |
-| `REVISE_HISTORY_MESSAGES`   | no       | `10`    | How many of a chat's most recent messages are sent as context to the model. |
-| `REVISE_FALLBACK_TO_FULL_REGENERATION` | no | `false` | If true, a revision whose patch still fails after one model retry falls back to fully regenerating the recipe (via `generate_raw_recipe`) instead of returning `502`. |
+*   **Распознавание жестов в реальном времени:** Вся ML-модель (MediaPipe) работает локально прямо в браузере. Данные с веб-камеры никуда не отправляются.
+*   **Режим точечных ошибок (Твист):** Приложение не просто угадывает жест, оно анализирует его математически. Если пользователь показывает жест неправильно, система дает конкретную подсказку, как его исправить (подробнее в разделе ниже).
+*   **Гибкий ИИ-бэкенд:** Генерация рецептов работает на базе **LangChain**. Архитектура построена provider-agnostic способом, что позволяет в одну строчку менять LLM-модели (от OpenAI до Anthropic или Google GenAI) без переписывания логики.
+*   **Геймификация и прогресс:** Полноценная система уровней (от «Новичка на кухне» до «Бога кухни»). За каждый выполненный шаг пользователь получает XP, а прогресс сохраняется в облачную БД (Supabase).
+*   **Мультиязычность:** Интерфейс приложения "на лету" переводится на русский, казахский и английский языки.
+*   **Продуманный UX/UI:** Адаптивный минималистичный дизайн с 3D-анимациями перелистывания страниц (как в настоящей книге), синтезированными звуковыми эффектами (Web Audio API) и конфетти при завершении готовки.
 
-### Run
+---
 
-```bash
-uvicorn backend.main:app --reload
-```
+## ✋ Управление и математика жестов
 
-(Note: AGENTS.md's Commands section says `uvicorn app.main:app`, but the FastAPI package in
-this repo is `backend/`, not `app/` — use `backend.main:app`.)
+В приложении используется 4 основных жеста для управления интерфейсом. Логика их распознавания написана с нуля с использованием координат точек (landmarks) кисти.
 
-### Test / lint / type-check
+1.  **👍 Лайк (Thumb Up)** — Следующий шаг рецепта.
+2.  **👎 Дизлайк (Thumb Down)** — Предыдущий шаг рецепта.
+3.  **✌️ Peace (V-жест)** — Запустить таймер для текущего шага.
+4.  **✋ Открытая ладонь (Open Palm)** — Остановить таймер.
 
-```bash
-pytest -q
-ruff check . && ruff format .
-mypy backend llm
-```
+### 🎯 Режим «Ошибка» (Обязательное условие хакатона)
 
-### Endpoints
+Мы отказались от стандартного ответа *"Жест не распознан"*. В файле `ml.js` реализована собственная математическая логика проверки качества жеста на основе евклидова расстояния `dist()` и сгибов фаланг пальцев `isFingerFolded()`:
 
-All three endpoints are public (no auth yet) for debugging.
+*   **Пример 1 (Жест Peace):** Если система видит, что подняты два пальца, она высчитывает дистанцию между кончиками указательного и среднего пальцев. Если они слиплись (расстояние `< 0.045`), система выдает точечную ошибку: *"Пальцы слишком близко! Раздвиньте указательный и средний пальцы шире, чтобы сделать жест 'Peace'"*.
+*   **Пример 2 (Жест Лайк):** Система проверяет математическое расстояние от кончиков пальцев до запястья по сравнению с костяшками. Если пользователь поднял большой палец, но забыл прижать к ладони остальные (например, безымянный и мизинец), система подскажет: *"Вы не согнули пальцы для Лайка"*.
 
-#### `POST /recipes/create`
+Такая обратная связь делает управление максимально интуитивным для нового пользователя.
 
-Runs the full pipeline: `generate_raw_recipe()` → `compose_recipe()`.
+---
 
-```bash
-curl -X POST http://localhost:8000/recipes/create \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "борщ на говяжьем бульоне", "allergies": null, "preferred_units": null}'
-```
+## 🛠 Технологический стек
 
-Response: the final `Recipe` object (`title`, `servings`, `equipment`, `source_urls`, `notes`,
-`ingredients`, `steps` with `display_text`, `total_time_minutes`, `warnings`).
+**Frontend:**
+*   Vanilla JS, HTML5, Tailwind CSS
+*   MediaPipe Vision Tasks (распознавание координат руки)
+*   Web Audio API (генерация UI-звуков без внешних файлов)
+*   canvas-confetti
 
-#### `POST /recipes/generate-raw`
+**Backend:**
+*   Python 3, FastAPI, Uvicorn
+*   LangChain & LangChain-OpenAI (LLM пайплайны и промпты)
+*   Pydantic (валидация схем JSON-ответов от ИИ)
 
-Calls the LLM only and returns the raw structured recipe JSON (matching
-`llm/prompts/recipe_schema.json`).
+**Database / Auth:**
+*   Supabase (PostgreSQL, LocalStorage Auth)
 
-```bash
-curl -X POST http://localhost:8000/recipes/generate-raw \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "борщ на говяжьем бульоне", "allergies": "без лактозы", "preferred_units": null}'
-```
+---
 
-- If the model reports a non-null `error`, responds `422` with that message.
-- If the model output fails schema validation even after one retry, responds `502`.
-- OpenAI timeouts respond `504`; rate limiting responds `429`.
+## 🚀 Как запустить проект локально
 
-#### `POST /recipes/compose`
+### 1. Настройка Backend (FastAPI)
+1. Перейдите в папку бэкенда:
+   ```bash
+   cd recipe-ai-backend
+   ```
+2. Создайте и активируйте виртуальное окружение:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Для Windows: .venv\Scripts\activate
+   ```
+3. Установите зависимости проекта:
+   ```bash
+   pip install -e .
+   ```
+4. Скопируйте файл конфигурации и вставьте свои ключи OpenAI:
+   ```bash
+   cp .env.example .env
+   ```
+5. Запустите сервер:
+   ```bash
+   python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+   ```
 
-Takes the raw recipe JSON (the body shape returned by `/recipes/generate-raw`) and returns the
-composed final `Recipe`.
+### 2. Настройка Frontend
+1. Откройте новый терминал в корневой папке проекта (`smart-chef-motion`).
+2. Запустите любой локальный веб-сервер. Например, с помощью Node.js:
+   ```bash
+   npx serve -l 8080
+   ```
+3. Откройте в браузере ссылку `http://localhost:8080`.
 
-```bash
-curl -X POST http://localhost:8000/recipes/compose \
-  -H "Content-Type: application/json" \
-  -d @raw_recipe.json
-```
-
-### Chat endpoints
-
-Full contract, entity shapes, and request/response examples:
-[`docs/chat_contract.md`](docs/chat_contract.md) (raw recipe/composed recipe shapes:
-[`docs/recipe_contract.md`](docs/recipe_contract.md)). All chat/recipe-book endpoints
-require an `X-User-Id` header — there is no real authentication yet (see the contract
-doc and REPORT.md); a user can only ever see their own chats and recipe-book entries.
-
-```bash
-# Start a chat (runs the existing create pipeline, saves draft version 1)
-curl -X POST http://localhost:8000/chats \
-  -H "Content-Type: application/json" -H "X-User-Id: demo-user" \
-  -d '{"prompt": "омлет с грибами и луком", "allergies": null, "preferred_units": null}'
-
-# Ask a question or request a revision - the model classifies which
-curl -X POST http://localhost:8000/chats/<chat_id>/messages \
-  -H "Content-Type: application/json" -H "X-User-Id: demo-user" \
-  -d '{"text": "убери лук из рецепта"}'
-
-# Confirm a version into the recipe book (null = latest version)
-curl -X POST http://localhost:8000/chats/<chat_id>/confirm \
-  -H "Content-Type: application/json" -H "X-User-Id: demo-user" \
-  -d '{"version": null}'
-
-curl http://localhost:8000/chats -H "X-User-Id: demo-user"
-curl http://localhost:8000/chats/<chat_id> -H "X-User-Id: demo-user"
-curl http://localhost:8000/recipe-book -H "X-User-Id: demo-user"
-curl http://localhost:8000/recipe-book/<recipe_id> -H "X-User-Id: demo-user"
-```
-
-- 404 for an unknown chat/recipe, or one that belongs to a different `X-User-Id`
-  (existence is never revealed to a non-owner).
-- 502 if a revision's patch still fails validation after one model retry
-  (see `REVISE_FALLBACK_TO_FULL_REGENERATION` above).
-- Chat/recipe-book state is **in-memory only** (per running process, lost on
-  restart) — persistence is a follow-up, see `docs/chat_contract.md`.
+---
+*Сделано с ❤️ для ADMIT HACKATHON*

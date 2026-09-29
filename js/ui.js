@@ -565,6 +565,7 @@ window.loadRecipeBook = async function() {
 };
 
 window.startNewChat = function() {
+    if (window.reshuffleDynamicGreetings) window.reshuffleDynamicGreetings();
     const screenChat = document.getElementById('screen-chat');
     
     // Если мы на экране готовки - используем endCooking, который все сбросит и вернет на главный экран
@@ -649,7 +650,7 @@ window.addXP = async function(amount) {
         window.AppAudio.success();
         const toast = document.createElement('div');
         toast.className = 'fixed top-10 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-white px-6 py-3 rounded-full font-bold shadow-2xl z-50 transition-all';
-        toast.innerText = `Новый уровень! ${getLevelInfo(newXp).current.icon} ${getLevelInfo(newXp).current.title}`;
+        toast.innerText = `${window.t('achieve_new')} ${getLevelInfo(newXp).current.icon} ${window.t('lvl_' + getLevelInfo(newXp).current.level)}`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
     }
@@ -687,8 +688,8 @@ function renderAchieveSidebar() {
     let html = `
         <div class="text-center mb-6 mt-4">
             <div class="text-6xl mb-2">${current.icon}</div>
-            <h2 class="text-xl font-bold font-serif text-gray-800">${current.title}</h2>
-            <p class="text-gray-500 text-sm">Уровень ${current.level}</p>
+            <h2 class="text-xl font-bold font-serif text-gray-800">${window.t('lvl_' + current.level)}</h2>
+            <p class="text-gray-500 text-sm">${window.t('achieve_level')} ${current.level}</p>
         </div>
     `;
     
@@ -703,14 +704,14 @@ function renderAchieveSidebar() {
             <div class="w-full bg-gray-200 rounded-full h-3">
                 <div class="bg-yellow-400 h-3 rounded-full transition-all duration-1000" style="width: ${progress}%"></div>
             </div>
-            <p class="text-center text-xs text-gray-400 mt-2">До звания "${next.title}" осталось ${next.xp - xp} XP</p>
+            <p class="text-center text-xs text-gray-400 mt-2">${window.t('achieve_until')} "${window.t('lvl_' + next.level)}" ${window.t('achieve_left')} ${next.xp - xp} XP</p>
         </div>
         `;
     } else {
-        html += '<div class="text-center text-sm text-yellow-500 font-bold mb-6">Вы достигли максимального уровня!</div>';
+        html += `<div class="text-center text-sm text-yellow-500 font-bold mb-6">${window.t('achieve_max')}</div>`;
     }
     
-    html += '<h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider px-2">Все звания:</h3><div class="flex flex-col gap-2 px-2 pb-6">';
+    html += `<h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider px-2">${window.t('achieve_all')}</h3><div class="flex flex-col gap-2 px-2 pb-6">`;
     
     LEVELS.forEach(lvl => {
         const isUnlocked = xp >= lvl.xp;
@@ -722,7 +723,7 @@ function renderAchieveSidebar() {
             <div class="flex items-center p-3 rounded-xl ${border} ${opacity} transition-all">
                 <div class="text-2xl mr-4">${lvl.icon}</div>
                 <div class="flex-1">
-                    <div class="font-bold text-sm text-gray-800">${lvl.title}</div>
+                    <div class="font-bold text-sm text-gray-800">${window.t('lvl_' + lvl.level)}</div>
                     <div class="text-xs text-gray-400">${lvl.xp} XP</div>
                 </div>
                 ${isUnlocked ? '<div class="text-green-500 font-bold">✓</div>' : '<div class="text-gray-300">🔒</div>'}

@@ -94,16 +94,25 @@ loginForm.addEventListener('submit', async (e) => {
         .eq('login', email)
         .eq('password_hash', fakeHash(password));
 
+
     if (error) {
-        alert("Ошибка БД: " + error.message);
+        if (error.message && error.message.includes("Could not find the 'name' column")) {
+            alert("Внимание! В Supabase в таблице 'users' нет колонки 'name'. Добавь её в панели Supabase (тип: text), чтобы имя сохранялось!");
+        } else if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
+            alert("Пользователь с таким Email уже существует! Пожалуйста, войдите в свой аккаунт.");
+        } else {
+            alert("Ошибка регистрации: " + error.message);
+        }
         btn.innerText = originalText;
         btn.disabled = false;
         return;
     }
 
+
     if (data && data.length > 0) {
         const user = data[0];
-        loginUser(user.login, user.user_id, user.points);
+        const displayName = user.name ? user.name : user.login;
+        loginUser(displayName, user.user_id, user.points);
     } else {
         alert("Неверный email или пароль!");
     }
@@ -127,7 +136,7 @@ registerForm.addEventListener('submit', async (e) => {
     const { data, error } = await supabaseClient
         .from('users')
         .insert([
-            { login: email, password_hash: fakeHash(password), points: 0 }
+            { login: email, password_hash: fakeHash(password), points: 0, name: name }
         ])
         .select();
 

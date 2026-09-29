@@ -16,9 +16,37 @@ window.translations = {
         
         // Экран Чата
         history_title: "История рецептов",
+        history_empty: "Тут будут сохраненные рецепты...",
+        achievements_title: "Достижения",
+        achieve_level: "Уровень",
+        achieve_until: "До звания",
+        achieve_left: "осталось",
+        achieve_max: "Вы достигли максимального уровня!",
+        achieve_all: "Все звания:",
+        achieve_new: "Новый уровень!",
+        lvl_1: "Новичок на кухне",
+        lvl_2: "Поваренок",
+        lvl_3: "Младший кулинар",
+        lvl_4: "Уверенный повар",
+        lvl_5: "Су-шеф",
+        lvl_6: "Шеф-повар",
+        lvl_7: "Мастер вкуса",
+        lvl_8: "Звезда Мишлен",
+        lvl_9: "Легендарный шеф",
+        lvl_10: "Бог кухни",
         xp_points: "Очки (XP):",
-        welcome_chef: "Здравствуйте, ",
-        chat_prompt: "Что мы будем готовить сегодня?",
+        welcome_chef: [
+            "Здравствуйте, ",
+            "Рады видеть вас, ",
+            "Добро пожаловать на кухню, ",
+            "Приветствую, "
+        ],
+        chat_prompt: [
+            "Что мы будем готовить сегодня?",
+            "Какой рецепт вам подсказать?",
+            "Чем займемся на кухне?",
+            "Готовы к кулинарным шедеврам?"
+        ],
         input_placeholder: "Напишите ингредиенты или блюдо...",
         ai_disclaimer: "Пожалуйста, укажите, если у вас есть аллергия на какие-либо продукты.",
         logout_btn: "Выйти",
@@ -30,6 +58,17 @@ window.translations = {
         recognized_gesture: "Распознанный жест",
         gesture_waiting: "Ожидание...",
         end_cooking_btn: "Завершить готовку",
+        ml_loading: "Загрузка ИИ (MediaPipe)...",
+        ml_camera_starting: "Запуск камеры...",
+        ml_camera_ready: "Камера готова!",
+        ml_camera_error: "Ошибка доступа к камере",
+        ml_gesture_unknown: "Жест не распознан! Сделайте четкий жест.",
+        ml_gesture_like: "👍 Лайк (Вперед)",
+        ml_gesture_dislike: "👎 Дизлайк (Назад)",
+        ml_gesture_peace: "✌️ Старт (Peace)",
+        ml_gesture_palm: "✋ Стоп (Открытая ладонь)",
+        ml_error_peace: "Пальцы слишком близко!",
+        ml_error_thumb: "Вы не согнули пальцы для Лайка",
         btn_prev: "← Назад (Свайп вправо)",
         btn_next: "Далее (Свайп влево) →",
         
@@ -56,9 +95,37 @@ window.translations = {
 
         // Экран Чата
         history_title: "Recipe History",
+        history_empty: "Saved recipes will appear here...",
+        achievements_title: "Achievements",
+        achieve_level: "Level",
+        achieve_until: "XP left to",
+        achieve_left: "",
+        achieve_max: "You reached the maximum level!",
+        achieve_all: "All Ranks:",
+        achieve_new: "New Level Up!",
+        lvl_1: "Kitchen Novice",
+        lvl_2: "Cook's Helper",
+        lvl_3: "Junior Cook",
+        lvl_4: "Confident Cook",
+        lvl_5: "Sous-Chef",
+        lvl_6: "Head Chef",
+        lvl_7: "Master of Taste",
+        lvl_8: "Michelin Star",
+        lvl_9: "Legendary Chef",
+        lvl_10: "God of the Kitchen",
         xp_points: "Points (XP):",
-        welcome_chef: "Hello, ",
-        chat_prompt: "What are we cooking today?",
+        welcome_chef: [
+            "Hello, ",
+            "Glad to see you, ",
+            "Welcome to the kitchen, ",
+            "Greetings, "
+        ],
+        chat_prompt: [
+            "What are we cooking today?",
+            "What recipe can I help you with?",
+            "Ready for a culinary masterpiece?",
+            "What's on the menu today?"
+        ],
         input_placeholder: "Type ingredients or a dish name...",
         ai_disclaimer: "Please specify if you have any food allergies.",
         logout_btn: "Log Out",
@@ -70,6 +137,17 @@ window.translations = {
         recognized_gesture: "Recognized Gesture",
         gesture_waiting: "Waiting...",
         end_cooking_btn: "End Cooking",
+        ml_loading: "Loading AI (MediaPipe)...",
+        ml_camera_starting: "Starting camera...",
+        ml_camera_ready: "Camera ready!",
+        ml_camera_error: "Camera access error",
+        ml_gesture_unknown: "Unknown gesture! Make a clear gesture.",
+        ml_gesture_like: "👍 Like (Next)",
+        ml_gesture_dislike: "👎 Dislike (Prev)",
+        ml_gesture_peace: "✌️ Start (Peace)",
+        ml_gesture_palm: "✋ Stop (Open Palm)",
+        ml_error_peace: "Fingers too close for Peace!",
+        ml_error_thumb: "Fingers not folded for Like",
         btn_prev: "← Prev (Swipe Right)",
         btn_next: "Next (Swipe Left) →",
         
@@ -96,9 +174,37 @@ window.translations = {
 
         // Экран Чата
         history_title: "Рецепттер тарихы",
+        history_empty: "Мұнда сақталған рецепттер болады...",
+        achievements_title: "Жетістіктер",
+        achieve_level: "Деңгей",
+        achieve_until: "Келесі атаққа дейін",
+        achieve_left: "XP қалды",
+        achieve_max: "Сіз ең жоғары деңгейге жеттіңіз!",
+        achieve_all: "Барлық атақтар:",
+        achieve_new: "Жаңа деңгей!",
+        lvl_1: "Ас үй жаңадан бастаушысы",
+        lvl_2: "Аспаз көмекшісі",
+        lvl_3: "Кіші аспаз",
+        lvl_4: "Сенімді аспаз",
+        lvl_5: "Су-шеф",
+        lvl_6: "Шеф-аспаз",
+        lvl_7: "Дәм шебері",
+        lvl_8: "Мишлен жұлдызы",
+        lvl_9: "Аңызға айналған шеф",
+        lvl_10: "Ас үй құдайы",
         xp_points: "Ұпайлар (XP):",
-        welcome_chef: "Сәлеметсіз бе, ",
-        chat_prompt: "Бүгін не пісіреміз?",
+        welcome_chef: [
+            "Сәлеметсіз бе, ",
+            "Сізді көргеніме қуаныштымын, ",
+            "Ас үйге қош келдіңіз, ",
+            "Армысыз, "
+        ],
+        chat_prompt: [
+            "Бүгін не пісіреміз?",
+            "Қандай рецепт іздеп жүрсіз?",
+            "Ас үйде не істейміз?",
+            "Кулинарлық шедеврге дайынсыз ба?"
+        ],
         input_placeholder: "Ингредиенттерді немесе тағам атауын жазыңыз...",
         ai_disclaimer: "Қандай да бір өнімдерге аллергияңыз болса, көрсетуіңізді сұраймыз.",
         logout_btn: "Шығу",
@@ -110,6 +216,17 @@ window.translations = {
         recognized_gesture: "Танылған қимыл",
         gesture_waiting: "Күтілуде...",
         end_cooking_btn: "Пісіруді аяқтау",
+        ml_loading: "Жасанды интеллект жүктелуде...",
+        ml_camera_starting: "Камера іске қосылуда...",
+        ml_camera_ready: "Камера дайын!",
+        ml_camera_error: "Камераға қол жеткізу қатесі",
+        ml_gesture_unknown: "Қимыл танылмады! Анық қимыл жасаңыз.",
+        ml_gesture_like: "👍 Лайк (Алға)",
+        ml_gesture_dislike: "👎 Дизлайк (Артқа)",
+        ml_gesture_peace: "✌️ Бастау (Peace)",
+        ml_gesture_palm: "✋ Тоқтату (Ашық алақан)",
+        ml_error_peace: "Саусақтар бір-біріне тым жақын!",
+        ml_error_thumb: "Лайк жасау үшін саусақтар бүгілмеген",
         btn_prev: "← Артқа (Оңға сырғыту)",
         btn_next: "Алға (Солға сырғыту) →",
         
@@ -141,10 +258,27 @@ window.changeLanguage = function(lang) {
     document.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
         if (window.translations[lang] && window.translations[lang][key]) {
+            let text = window.translations[lang][key];
+            if (Array.isArray(text)) {
+                if (!window.activeRandomPhrases) window.activeRandomPhrases = {};
+                
+                // If it's already selected and we're just switching languages, keep the same index if possible
+                if (window.activeRandomPhrases[key] !== undefined && window.activeRandomPhrases[key] < text.length) {
+                    text = text[window.activeRandomPhrases[key]];
+                } else {
+                    const idx = Math.floor(Math.random() * text.length);
+                    window.activeRandomPhrases[key] = idx;
+                    text = text[idx];
+                }
+            }
+            
             if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
-                element.setAttribute('placeholder', window.translations[lang][key]);
+                element.setAttribute('placeholder', text);
+            } else if (element.tagName === 'SPAN' && element.id !== 'user-name-display') {
+                 // For welcome_chef we need to avoid overwriting the child elements if any, but in our HTML it's a separate span!
+                 element.innerText = text;
             } else {
-                element.innerText = window.translations[lang][key];
+                element.innerText = text;
             }
         }
     });
@@ -153,6 +287,13 @@ window.changeLanguage = function(lang) {
     if (typeof updateRecipeUI === 'function' && !document.getElementById('screen-cooking').classList.contains('hidden')) {
         updateRecipeUI();
     }
+    
+    // Обновляем сайдбар достижений, если он открыт
+    const achieveSidebar = document.getElementById('achieve-sidebar');
+    if (achieveSidebar && typeof renderAchieveSidebar === 'function' && !achieveSidebar.classList.contains('-translate-x-full')) {
+        renderAchieveSidebar();
+    }
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -163,3 +304,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     changeLanguage(savedLang);
 });
+
+
+window.reshuffleDynamicGreetings = function() {
+    window.activeRandomPhrases = {};
+    const lang = localStorage.getItem('chefLang') || 'ru';
+    changeLanguage(lang);
+};
+
+window.t = function(key) {
+    const lang = localStorage.getItem('chefLang') || 'ru';
+    return (window.translations[lang] && window.translations[lang][key]) ? window.translations[lang][key] : key;
+};
