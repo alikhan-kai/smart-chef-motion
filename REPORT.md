@@ -1,5 +1,48 @@
 # Work Log
 
+## Step-header backward compatibility (2026-09-29)
+
+### Summary
+
+- Approved fix on top of merged main `f770336`: default an omitted runtime
+  `RawStep.header` to `None` so recipes saved before step titles still validate.
+  New headers remain intact through composition and magazine storage.
+- After approval, synchronized the revision output schema's step header with
+  the existing recipe-generation schema. Both strict AI schemas require the
+  nullable field; only runtime validation accepts it missing for old recipes.
+  Prompt text, frontend behavior, and environment files are unchanged.
+  No database migration or dependencies were added.
+
+### Files
+
+- `llm/schemas.py`: runtime default and documented compatibility exception.
+- `backend/tests/test_step_header_compatibility.py`: missing, explicit-null,
+  and text headers through validation, composition, saved-recipe reload, and
+  in-memory magazine API round trips.
+- `llm/tests/test_schema_parity.py`: locks the intentional distinction between
+  required AI output and backwards-compatible runtime input.
+- `llm/prompts/revise_schema.json`: adds the existing nullable header to
+  revision steps, checked against regenerated strict schema by parity tests.
+- `README.md`: describes the compatibility behavior.
+
+### Verification
+
+- Before the fix, the merged release failed collection in six test modules
+  because legacy step fixtures omitted `header`.
+- Post-fix full suite: 146 passed, 2 failed. All 10 new regression cases pass.
+  The two remaining failures are revision-schema parity checks: the checked-in
+  `revise_schema.json` lacks the header introduced in the recipe schema.
+  Both failures were reproduced against untouched merged main `f770336`.
+- Mypy passes across 58 source files. Changed Python files pass Ruff lint and
+  format checks; `git diff --check` passes. No real model or database calls
+  were used, and `.env` was not mounted in the isolated test environment.
+- After the approved revision-schema synchronization, the full suite passes:
+  148 tests, including all schema-parity checks and 10 new regression cases.
+  Mypy passes across 58 files; all three changed Python files pass Ruff lint
+  and formatting checks. The unrelated pre-existing E501 comment in
+  `backend/services/recipe_composer.py:50` remains outside this fix.
+  EC2 remains on the previous release pending review/merge of the fix branch.
+
 ## Hackathon Docker integration (2026-09-29)
 
 - Updated the DevOps branch to `origin/main` at `64347b0`, preserving the staged
