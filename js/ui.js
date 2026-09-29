@@ -738,3 +738,42 @@ function renderAchieveSidebar() {
 window.completedSteps = new Set();
 
 setTimeout(() => { if(window.updateXPButton) updateXPButton(parseInt(localStorage.getItem('chefPoints')) || 0); }, 500);
+
+
+// ==========================================
+// SWIPE TO CLOSE SIDEBARS (Mobile)
+// ==========================================
+let touchStartX = 0;
+let touchEndX = 0;
+
+function handleSwipeGesture(sidebarId, closeFunc) {
+    const sidebar = document.getElementById(sidebarId);
+    if (!sidebar) return;
+
+    sidebar.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    sidebar.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe(sidebar, closeFunc);
+    }, {passive: true});
+}
+
+function handleSwipe(sidebar, closeFunc) {
+    // Swipe left threshold: 50px
+    if (touchEndX < touchStartX - 50) {
+        if (!sidebar.classList.contains('-translate-x-full')) {
+            closeFunc();
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    handleSwipeGesture('achieve-sidebar', () => {
+        document.getElementById('achieve-sidebar').classList.add('-translate-x-full');
+    });
+    handleSwipeGesture('recipe-book-sidebar', () => {
+        document.getElementById('recipe-book-sidebar').classList.add('-translate-x-full');
+    });
+});
