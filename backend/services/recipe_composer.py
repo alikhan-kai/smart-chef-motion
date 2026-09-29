@@ -47,15 +47,25 @@ async def compose_recipe(raw: RawRecipe) -> Recipe:
     steps = raw.steps or []
 
     ingredients_by_id = {ingredient.id: ingredient for ingredient in ingredients}
+    # LLMs occasionally hallucinate and put the ingredient 'name' in ingredients_used instead of 'id'
+    ingredients_by_name = {ingredient.name.lower(): ingredient.id for ingredient in ingredients}
 
     used_ids: set[str] = set()
     for step in steps:
-        for ingredient_id in step.ingredients_used:
-            if ingredient_id not in ingredients_by_id:
+        corrected_used_ids = []
+        for ingredient_ref in step.ingredients_used:
+            if ingredient_ref in ingredients_by_id:
+                corrected_used_ids.append(ingredient_ref)
+                used_ids.add(ingredient_ref)
+            elif ingredient_ref.lower() in ingredients_by_name:
+                actual_id = ingredients_by_name[ingredient_ref.lower()]
+                corrected_used_ids.append(actual_id)
+                used_ids.add(actual_id)
+            else:
                 raise UnknownIngredientError(
-                    f"Step {step.step_number} references unknown ingredient id '{ingredient_id}'"
+                    f"Step {step.step_number} references unknown ingredient id '{ingredient_ref}'"
                 )
-            used_ids.add(ingredient_id)
+        step.ingredients_used = corrected_used_ids
 
     language = detect_recipe_language(raw)
 
