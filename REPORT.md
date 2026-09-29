@@ -1,5 +1,50 @@
 # Work Log
 
+## Hackathon Docker integration (2026-09-29)
+
+- Updated the DevOps branch to `origin/main` at `64347b0`, preserving the staged
+  Docker work. The final magazine feature and ingredient-ID fixes are in the
+  root backend, so Compose now builds root `backend/`, `llm/`, `pyproject.toml`,
+  and `uv.lock`; the older `recipe-ai-backend/` tree is not packaged.
+- Added separate frontend/backend Dockerfiles and minimal build contexts.
+  Backend uses Python 3.12, frozen runtime dependencies, a non-root user, and one
+  Uvicorn worker. The health probe uses existing `/openapi.json` without LLM calls.
+- Compose injects root `.env` at runtime; environment files are excluded from
+  images. Documented `OPENAI_*` settings for the selected root backend, optional
+  Supabase recipe-book/magazine persistence, and the remaining in-memory chats.
+- Added `DEPLOYMENT.md` and a reusable read-only HTTP smoke check. Backend
+  application source and dependency files are unchanged by the Docker work.
+- Verification against `64347b0`: both images built from the frozen root lockfile
+  and became healthy. HTTP checks passed for the final UI and 9 local assets,
+  magazine/book/chat list routes, required user headers, secret-path exclusion,
+  and localhost CORS. The packaged backend runs as UID 10001, contains its
+  prompts/schemas, and uses in-memory magazines with empty Supabase settings.
+- Existing root backend tests: **138 passed** with dummy `OPENAI_API_KEY` and
+  `OPENAI_MODEL` values and empty Supabase settings. Two tests require those dummy
+  settings even though their model calls are mocked. Mypy passed across 57 files;
+  Ruff formatting passed across 59 files; the new smoke script passed lint.
+  Full application lint still reports one pre-existing E501 comment at
+  `backend/services/recipe_composer.py:50`; application source was left intact.
+- Verification ran on temporary ports 18000/18080 because another project's
+  container occupies 8000. The temporary containers/network were removed after
+  checking. Full camera/OpenAI/Supabase demo testing requires the root `.env`,
+  the configured external services, and free ports 8000/8080. No real API keys,
+  model calls, external data writes, or database migrations were used here.
+- Hosted-demo preparation: introduced one browser API-base setting, preserving
+  localhost for direct static development and using `/api` in the Docker image.
+  Nginx proxies requests and cover uploads to the backend, with Docker DNS
+  re-resolution after backend replacement. This supports one tunnel hostname.
+- Added automatic restart policies and image tags selected by `IMAGE_TAG`, with
+  documented code-update and rollback commands. Rollback restores code only;
+  in-memory state is still lost on backend replacement.
+- Hosted-proxy validation: rebuilt both images; Nginx configuration and changed
+  JavaScript syntax checks passed. The smoke check passed for 10 local assets
+  and proxied API endpoints, including after backend container replacement.
+  An isolated in-memory test passed magazine creation, recipe items, multipart
+  cover transport, publishing, market listing, detail retrieval, and deletion.
+  No live Supabase or model calls were made. Rollback commands are documented;
+  a real two-release rollback and public-domain browser test remain untested.
+
 ## Repo inspection
 
 - Repo had `LICENSE`, `README.md` (tracked), plus untracked `agents.md`, `backend`, `llm/`.

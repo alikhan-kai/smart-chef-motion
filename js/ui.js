@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 if (!window.currentChatId) {
                     // 1. Первый запрос (Начинаем новый чат)
-                    const response = await fetch('http://localhost:8000/chats', {
+                    const response = await fetch(`${window.CHEF_API_BASE}/chats`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderRecipeCard(data.recipe);
                 } else {
                     // 2. Последующие запросы (Общаемся в текущем чате, ИИ помнит контекст)
-                    const response = await fetch(`http://localhost:8000/chats/${window.currentChatId}/messages`, {
+                    const response = await fetch(`${window.CHEF_API_BASE}/chats/${window.currentChatId}/messages`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ function renderRecipeCard(recipe) {
                         btn.addEventListener('click', async () => {
                 if (window.currentChatId) {
                     try {
-                        await fetch('http://localhost:8000/chats/' + window.currentChatId + '/confirm', {
+                        await fetch(`${window.CHEF_API_BASE}/chats/${window.currentChatId}/confirm`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -543,7 +543,7 @@ window.loadRecipeBook = async function() {
         
         // 2. Fallback на In-Memory бэкенд, если Supabase пуст или отвалился
         if (recipes.length === 0) {
-            const response = await fetch('http://localhost:8000/recipe-book', {
+            const response = await fetch(`${window.CHEF_API_BASE}/recipe-book`, {
                 headers: { 'X-User-Id': localStorage.getItem('chefId') || 'test-user' }
             });
             if (response.ok) {
