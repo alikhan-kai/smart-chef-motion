@@ -116,6 +116,7 @@
                         "additionalProperties": false,
                         "required": [
                             "step_number",
+                            "header",
                             "action",
                             "ingredients_used",
                             "time_minutes",
@@ -197,6 +198,12 @@
                                 }
                             },
                             "final_action": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "header": {
                                 "type": [
                                     "string",
                                     "null"

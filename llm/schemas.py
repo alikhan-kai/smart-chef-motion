@@ -41,6 +41,7 @@ class RawStep(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     step_number: int
+    header: str | None
     action: str
     ingredients_used: list[str]
     time_minutes: float | None

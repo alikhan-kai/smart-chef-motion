@@ -146,10 +146,11 @@ async function checkError(response) {
 // Рендер карточки рецепта
 window.buildMockRecipeData = function(recipe) {
     const steps = (recipe.steps || []).map((step) => {
-                let placeStr = step.place ? step.place.replace(/_/g, ' ') : '';
+                        let placeStr = step.place ? step.place.replace(/_/g, ' ') : '';
         if (placeStr) placeStr = placeStr.charAt(0).toUpperCase() + placeStr.slice(1);
+        let title = step.header ? step.header : (placeStr ? `Шаг ${step.step_number}: ${placeStr}` : `Шаг ${step.step_number}`);
         return {
-            title: placeStr ? `Шаг ${step.step_number}: ${placeStr}` : `Шаг ${step.step_number}`,
+            title: title,
             desc: step.action,
             timer: step.time_minutes ? Math.round(step.time_minutes * 60) : null
         };
