@@ -60,9 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 1. Первый запрос (Начинаем новый чат)
                     const response = await fetch('http://localhost:8000/chats', {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
-                            'X-User-Id': 'test-user'
+                            'X-User-Id': localStorage.getItem('chefId') || 'test-user'
                         },
                         body: JSON.stringify({ prompt: text })
                     });
@@ -78,9 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 2. Последующие запросы (Общаемся в текущем чате, ИИ помнит контекст)
                     const response = await fetch(`http://localhost:8000/chats/${window.currentChatId}/messages`, {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
-                            'X-User-Id': 'test-user'
+                            'X-User-Id': localStorage.getItem('chefId') || 'test-user'
                         },
                         body: JSON.stringify({ text: text })
                     });
@@ -144,21 +144,22 @@ async function checkError(response) {
 }
 
 // Рендер карточки рецепта
-function renderRecipeCard(recipe) {
-    if (!recipe) return;
-    
-    // Перезаписываем страницы книги новыми шагами
-    window.mockRecipeData = recipe.steps.map((step) => {
+window.buildMockRecipeData = function(recipe) {
+    const steps = (recipe.steps || []).map((step) => {
         return {
             title: step.header ? step.header : (step.place ? `На месте: ${step.place}` : `Шаг ${step.step_number}`),
             desc: step.action,
             timer: step.time_minutes ? Math.round(step.time_minutes * 60) : null
         };
     });
+    return steps.length > 0 ? steps : [{ title: "Пустой рецепт", desc: "Нет шагов.", timer: null }];
+};
 
-    if (window.mockRecipeData.length === 0) {
-        window.mockRecipeData = [{ title: "Пустой рецепт", desc: "Нет шагов.", timer: null }];
-    }
+function renderRecipeCard(recipe) {
+    if (!recipe) return;
+
+    // Перезаписываем страницы книги новыми шагами
+    window.mockRecipeData = window.buildMockRecipeData(recipe);
 
     // Ингредиенты
     let ingredientsHtml = '<div class="mt-3 mb-4"><p class="font-semibold text-gray-800 mb-2">🛒 Ингредиенты:</p><ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">';
@@ -199,7 +200,10 @@ function renderRecipeCard(recipe) {
                     try {
                         await fetch('http://localhost:8000/chats/' + window.currentChatId + '/confirm', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-User-Id': 'test-user' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-User-Id': localStorage.getItem('chefId') || 'test-user'
+                            },
                             body: JSON.stringify({})
                         });
                         
@@ -265,11 +269,18 @@ function startCooking() {
     setTimeout(() => {
         screenChat.classList.add('hidden');
         screenCooking.classList.remove('hidden');
-        
+
         requestAnimationFrame(() => {
             screenCooking.classList.remove('opacity-0');
+            // endCooking() (below) sets this element's opacity via inline
+            // style, not the 'opacity-0' class - removing the class alone
+            // does nothing once an inline style is set (inline always wins
+            // over a class), so a *second* cooking session stayed stuck at
+            // opacity:0 (a black screen) even after unhiding. Set it back
+            // explicitly here too.
+            screenCooking.style.opacity = '1';
         });
-        
+
         currentStepIndex = 0;
     if (window.completedSteps) window.completedSteps.clear();
         updateRecipeUI();
@@ -286,9 +297,18 @@ function startCooking() {
 window.endCooking = function() {
     const screenCooking = document.getElementById('screen-cooking');
     const screenChat = document.getElementById('screen-chat');
-    
+
     if (window.stopTimer) window.stopTimer();
-    
+
+    // Stop the camera/gesture-recognizer session - without this, starting a
+    // new recipe on top of a still-running one is what caused the page to
+    // glitch and show nothing (see js/ml.js's stopML()).
+    import('./ml.js').then(module => {
+        if (module.stopML) module.stopML();
+    }).catch(err => {
+        console.error("Ошибка остановки ML модуля:", err);
+    });
+
     screenCooking.style.transition = 'opacity 0.5s ease';
     screenCooking.style.opacity = '0';
     
@@ -524,7 +544,7 @@ window.loadRecipeBook = async function() {
         // 2. Fallback на In-Memory бэкенд, если Supabase пуст или отвалился
         if (recipes.length === 0) {
             const response = await fetch('http://localhost:8000/recipe-book', {
-                headers: { 'X-User-Id': 'test-user' }
+                headers: { 'X-User-Id': localStorage.getItem('chefId') || 'test-user' }
             });
             if (response.ok) {
                 const data = await response.json();

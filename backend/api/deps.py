@@ -17,6 +17,7 @@ from fastapi import Header, Request
 
 from backend.repositories.chat_repo import ChatRepository
 from backend.repositories.recipe_book_repo import RecipeBookRepository
+from backend.repositories.recipe_magazine_repo import RecipeMagazineRepository
 
 
 def get_user_id(x_user_id: str = Header(..., alias="X-User-Id")) -> str:
@@ -30,4 +31,9 @@ def get_chat_repository(request: Request) -> ChatRepository:
 
 def get_recipe_book_repository(request: Request) -> RecipeBookRepository:
     repo: RecipeBookRepository = request.app.state.recipe_book_repository
+    return repo
+
+
+def get_recipe_magazine_repository(request: Request) -> RecipeMagazineRepository:
+    repo: RecipeMagazineRepository = request.app.state.recipe_magazine_repository
     return repo

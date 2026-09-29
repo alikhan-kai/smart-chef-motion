@@ -126,7 +126,17 @@
               <button onclick="toggleRecipeBook()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-claude-accent border border-gray-100 hover:scale-105" title="История рецептов">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
               </button>
-              
+
+              <!-- Кнопка Моих кулинарных журналов -->
+              <button onclick="toggleMyMagazines()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-claude-accent border border-gray-100 hover:scale-105" title="Мои кулинарные журналы">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.5 2.5v5m-2.5-2.5h5"></path></svg>
+              </button>
+
+              <!-- Кнопка Витрины (Маркет) -->
+              <button onclick="toggleMagazineMarket()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-claude-accent border border-gray-100 hover:scale-105" title="Витрина кулинарных журналов">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18l-1.5 9h-15L3 3z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.5 12v6a1 1 0 001 1h9a1 1 0 001-1v-6"></path></svg>
+              </button>
+
               <!-- Кнопка Нового чата (Домой) -->
               <button onclick="startNewChat()" class="p-3 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-claude-accent border border-gray-100 hover:scale-105" title="Начать заново (Новый рецепт)">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
@@ -162,6 +172,120 @@
               </div>
               <div id="recipe-book-list" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gray-50">
                   <div data-i18n="history_empty" class="text-gray-400 text-sm text-center mt-10">Тут будут сохраненные рецепты...</div>
+              </div>
+          </div>
+
+            <!-- Сайдбар "Мои кулинарные журналы" -->
+          <div id="magazine-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+              <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                  <h3 data-i18n="magazine_mine_title" class="font-serif text-xl font-bold text-gray-800">Мои кулинарные журналы</h3>
+                  <button onclick="toggleMyMagazines()" class="text-gray-400 hover:text-gray-700 font-bold text-xl">&times;</button>
+              </div>
+              <div class="p-4 border-b border-gray-100">
+                  <button onclick="openMagazineEditor()" data-i18n="magazine_new_button" class="w-full bg-claude-accent hover:bg-claude-accentHover text-white px-4 py-2 rounded-lg font-medium transition">+ Новый журнал</button>
+              </div>
+              <div id="magazine-list" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-gray-50">
+                  <div data-i18n="magazine_mine_empty" class="text-gray-400 text-sm text-center mt-10">У вас пока нет кулинарных журналов.</div>
+              </div>
+          </div>
+
+            <!-- Полноэкранная витрина кулинарных журналов (галерея в духе Notion) -->
+          <div id="magazine-market-page" class="fixed inset-0 z-[55] hidden flex-col bg-[#FAFAF8]">
+              <div class="border-b border-gray-100 bg-white px-4 sm:px-10 py-6 flex flex-col gap-4 shrink-0">
+                  <div class="flex justify-between items-center">
+                      <div class="flex items-center gap-3">
+                          <button onclick="closeMagazineMarketToHome()" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-claude-accent" title="На главную">
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                          </button>
+                          <h2 data-i18n="magazine_market_title" class="font-serif text-2xl sm:text-3xl font-bold text-gray-800">Витрина журналов</h2>
+                      </div>
+                      <button onclick="toggleMagazineMarket()" class="text-gray-400 hover:text-gray-700 font-bold text-2xl leading-none">&times;</button>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
+                      <div class="relative flex-1 max-w-xl">
+                          <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"></path></svg>
+                          <input type="text" id="magazine-market-search" data-i18n="magazine_market_search_placeholder" placeholder="Поиск по названию..." class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-claude-accent">
+                      </div>
+                      <div class="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+                          <button id="magazine-market-sort-popular" onclick="setMagazineMarketSort('popular')" data-i18n="magazine_sort_popular" class="px-3 py-1.5 rounded-md text-sm font-medium transition bg-white shadow-sm text-claude-text">Популярное</button>
+                          <button id="magazine-market-sort-latest" onclick="setMagazineMarketSort('latest')" data-i18n="magazine_sort_latest" class="px-3 py-1.5 rounded-md text-sm font-medium transition text-gray-500">Новое</button>
+                      </div>
+                  </div>
+              </div>
+              <div id="magazine-market-list" class="flex-1 overflow-y-auto p-4 sm:p-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 content-start">
+                  <div data-i18n="magazine_market_empty" class="col-span-full text-gray-400 text-sm text-center mt-10">Пока нет опубликованных журналов.</div>
+              </div>
+          </div>
+
+            <!-- Модалка редактирования журнала -->
+          <div id="magazine-editor-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50 p-4">
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+                  <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                      <h3 id="magazine-editor-title" data-i18n="magazine_editor_title_new" class="font-serif text-xl font-bold text-gray-800">Новый журнал</h3>
+                      <button onclick="closeMagazineEditor()" class="text-gray-400 hover:text-gray-700 font-bold text-xl">&times;</button>
+                  </div>
+                  <div class="p-6 overflow-y-auto flex flex-col gap-4">
+                      <div>
+                          <label data-i18n="magazine_field_title" class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+                          <input type="text" id="magazine-editor-title-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-claude-accent">
+                      </div>
+                      <div>
+                          <label data-i18n="magazine_field_description" class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                          <textarea id="magazine-editor-description-input" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-claude-accent resize-none"></textarea>
+                      </div>
+                      <div>
+                          <label data-i18n="magazine_field_cover" class="block text-sm font-medium text-gray-700 mb-1">Обложка</label>
+                          <input type="file" id="magazine-editor-cover-input" accept="image/*" class="w-full text-sm">
+                      </div>
+                      <div id="magazine-editor-current-items-wrapper" class="hidden">
+                          <label data-i18n="magazine_field_current_items" class="block text-sm font-medium text-gray-700 mb-2">Рецепты в этом журнале</label>
+                          <div id="magazine-editor-current-items" class="flex flex-col gap-2 max-h-48 overflow-y-auto border border-gray-100 rounded-lg p-2"></div>
+                      </div>
+                      <div>
+                          <label data-i18n="magazine_field_recipes" class="block text-sm font-medium text-gray-700 mb-2">Рецепты из вашей книги</label>
+                          <div id="magazine-editor-recipe-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto border border-gray-100 rounded-lg p-2"></div>
+                      </div>
+                  </div>
+                  <div class="p-6 border-t border-gray-100 flex flex-col gap-2">
+                      <div class="flex gap-2">
+                          <button onclick="saveMagazineEditor()" data-i18n="magazine_save_button" class="flex-1 bg-claude-accent hover:bg-claude-accentHover text-white px-4 py-2 rounded-lg font-medium transition">Сохранить</button>
+                          <button id="magazine-editor-share-btn" onclick="shareMagazineFromEditor()" data-i18n="magazine_share_button" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">Поделиться</button>
+                      </div>
+                      <div class="flex gap-2">
+                          <button id="magazine-editor-unpublish-btn" onclick="unpublishMagazineFromEditor()" data-i18n="magazine_unpublish_button" class="hidden flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition">Снять с публикации</button>
+                          <button id="magazine-editor-delete-btn" onclick="deleteMagazineFromEditor()" data-i18n="magazine_delete_button" class="hidden flex-1 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-medium transition">Удалить</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+            <!-- Модалка просмотра журнала -->
+          <div id="magazine-detail-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50 p-4">
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                  <div class="p-6 border-b border-gray-100 flex justify-between items-start">
+                      <div>
+                          <h3 id="magazine-detail-title" class="font-serif text-xl font-bold text-gray-800">-</h3>
+                          <p id="magazine-detail-description" class="text-sm text-gray-500 mt-1"></p>
+                          <p id="magazine-detail-views" class="text-xs text-gray-400 mt-1"></p>
+                      </div>
+                      <button onclick="closeMagazineDetail()" class="text-gray-400 hover:text-gray-700 font-bold text-xl">&times;</button>
+                  </div>
+                  <img id="magazine-detail-cover" class="hidden w-full max-h-56 object-cover" src="" alt="">
+                  <div id="magazine-detail-items" class="p-6 overflow-y-auto flex flex-col gap-6"></div>
+              </div>
+          </div>
+
+            <!-- Модалка выбора "в какой мой журнал сохранить" -->
+          <div id="magazine-save-picker-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/50 p-4">
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[80vh] flex flex-col">
+                  <div class="p-5 border-b border-gray-100 flex justify-between items-center">
+                      <h3 data-i18n="magazine_save_picker_title" class="font-serif text-lg font-bold text-gray-800">Сохранить в журнал</h3>
+                      <button onclick="closeSaveItemPicker()" class="text-gray-400 hover:text-gray-700 font-bold text-xl">&times;</button>
+                  </div>
+                  <div id="magazine-save-picker-list" class="flex-1 overflow-y-auto p-3 flex flex-col gap-1"></div>
+                  <div class="p-3 border-t border-gray-100">
+                      <button onclick="saveItemToNewMagazine()" data-i18n="magazine_save_picker_new" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-claude-accent hover:bg-gray-50 transition">+ Новый журнал</button>
+                  </div>
               </div>
           </div>
 
@@ -320,6 +444,7 @@
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/magazine.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="js/audio.js"></script>
 </body>
