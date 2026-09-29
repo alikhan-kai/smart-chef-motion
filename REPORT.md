@@ -998,3 +998,508 @@ sub-decisions the same principle applied to):
    it the desired UX, or should the model be instructed to translate
    referenced recipe terms inline within an `answer_text` even though the
    underlying data stays untouched?
+
+---
+
+# Work Log — Recipe magazine feature (Supabase persistence + shareable market)
+
+## Summary
+
+Added the "recipe magazine" feature: a user assembles a titled, described,
+optionally-covered collection of recipes out of their own recipe book and
+can publish it to an in-app market, where other users find it by
+`ILIKE` search on title/description (results still ranked by `view_count`)
+or by browsing recommendations sorted by popularity. Viewing a shared
+magazine shows full recipes and lets a viewer clone one recipe into their
+own recipe book. This is a **new, separate concept from the recipe book**
+(the user's full request history, `RecipeBookEntry`) — named "recipe
+magazine" throughout specifically to avoid that confusion, per explicit
+instruction.
+
+This also required the one piece of real persistence the codebase didn't
+have yet: the recipe book (`RecipeBookRepository`) and the new magazine
+repository are now Supabase-backed when `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`
+are configured, with an automatic fallback to the pre-existing in-memory
+implementations otherwise — chosen specifically so the entire existing test
+suite (128 tests) keeps passing completely unmodified, since the test
+environment sets neither variable.
+
+A magazine's recipes are stored as **snapshots** (a full `Recipe` JSON copy
+at the moment a recipe is added), not live references into the owner's
+recipe book — see `backend/schemas/recipe_magazine.py`'s docstring. This
+was a deliberate implementation refinement over a straight foreign-key
+join: `RecipeBookRepository.get_entry()` is scoped by owner (privacy by
+construction), and a shared magazine must be readable by *other* users, so
+a join would have needed a new "read anyone's recipe-book entry" backdoor.
+Snapshotting avoids that entirely, at the cost of an edit to a magazine's
+item list not automatically tracking later edits to the source recipe
+(there are none currently possible anyway - recipe-book entries are
+immutable once confirmed).
+
+## Files
+
+**Created:**
+- `backend/config.py` — `BackendSettings` (`supabase_url`, `supabase_service_key`).
+- `backend/repositories/recipe_magazine_repo.py` — `RecipeMagazineRepository` protocol, `InMemoryRecipeMagazineRepository`, `SupabaseRecipeMagazineRepository`.
+- `backend/schemas/recipe_magazine.py` — `RecipeMagazineItem`/`Summary`/`Detail`, create/update/set-items request schemas.
+- `backend/services/recipe_magazine_service.py` — `MagazineNotFoundError`, `RecipeEntryNotFoundError`, create/update/share/unpublish/delete/list/detail/clone.
+- `backend/api/routes_recipe_magazine.py` — all `/recipe-magazines*` endpoints.
+- `backend/tests/test_recipe_magazine_service.py` (5 tests), `test_recipe_magazine_endpoints.py` (4 tests).
+- `docs/recipe_magazine_contract.md` — SQL schema (including the four new tables and the `increment_magazine_view_count` function), endpoint table, user-scoping caveat.
+- `js/magazine.js` — all frontend logic for the two new sidebars + two new modals.
+
+**Modified:**
+- `backend/repositories/recipe_book_repo.py` — added `SupabaseRecipeBookRepository`, unchanged `InMemoryRecipeBookRepository`/protocol.
+- `backend/api/deps.py` — `get_recipe_magazine_repository`.
+- `backend/main.py` — Supabase-vs-in-memory repository selection, registers the new router, exception handlers for `MagazineNotFoundError` (→404) and `RecipeEntryNotFoundError` (→404).
+- `pyproject.toml` — new dependencies `supabase`, `python-multipart` (the latter required by FastAPI's `UploadFile`/multipart form parsing, needed for the cover-upload endpoint); `flake8-bugbear.extend-immutable-calls` gained `fastapi.File`.
+- `.env.example` — `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`.
+- `index.html` — two new floating buttons (magazine, market), two new sidebars, two new modals (editor, detail viewer).
+- `js/i18n.js` — `magazine_*` keys in all three languages (ru/en/kk).
+- `README.md` — feature bullet, Supabase env-var setup note.
+
+**Untouched (explicitly separate concept, left alone per instruction):**
+- `backend/repositories/recipe_book_repo.py`'s existing protocol/InMemory class, `backend/services/recipe_book_service.py`, `backend/api/routes_recipe_book.py`, `backend/schemas/chat.py::RecipeBookEntry` — this is the user's history, not the new feature.
+
+## New endpoints
+
+See `docs/recipe_magazine_contract.md` for the full table; all under
+`/recipe-magazines`, `X-User-Id`-scoped except the market listing and cover
+fetch (public by design, since a magazine's whole point is sharing it).
+
+## Decisions and assumptions
+
+All confirmed with the user via `AskUserQuestion` before implementation
+(see the plan file this session produced): Supabase-backed via a separate
+FastAPI feature (not frontend-direct Supabase calls); keep the existing
+ad hoc `user_id` (no real-auth upgrade in scope); recipe book also moves to
+Supabase; cover stored as raw file bytes in a `bytea` column (not Storage,
+not decoded pixels); full edit + unpublish/delete after sharing; "share"
+publishes to the in-app market only (no public unauthenticated link);
+viewing someone else's magazine shows full recipes and allows cloning;
+view counting is deduped one-per-(user, magazine); market search matches
+title+description via `ILIKE`, always ordered by `view_count`; no caps on
+recipes-per-magazine or magazines-per-user for v1.
+
+One implementation-level decision made without re-asking (in-scope
+technical judgment call, not a product question): items are snapshots
+rather than a join to `recipe_book_entries` (see Summary) — this was
+necessitated by the access-control model, not a product preference, so it
+was made directly rather than escalated.
+
+## Problems and fixes
+
+1. **`bytea` over PostgREST needs the `\x`-prefixed hex text form**, not
+   raw hex — Postgres's default `bytea_output = hex` textual representation
+   is `\xdeadbeef`; sending/reading plain hex without the prefix would
+   silently produce wrong bytes once against a real Supabase project (not
+   caught by the in-memory-backed test suite, which never encodes bytea at
+   all). Fixed in `SupabaseRecipeMagazineRepository.set_cover`/`get_cover`.
+2. **View-count increment can't be expressed as a plain PostgREST update**
+   (`view_count = view_count + 1` needs the old value, which a JSON PATCH
+   can't reference) — solved with a small `increment_magazine_view_count`
+   SQL function called via `.rpc()`, kept atomic under concurrent viewers
+   rather than a read-then-write from Python.
+3. **First-view response under-counted by one**: `get_magazine_detail()`
+   originally called `get_detail()` (builds the response) before
+   `record_view()` (which increments), so a first-time viewer's own
+   request showed the pre-increment count. Fixed by re-fetching detail
+   after recording the view; caught by
+   `test_view_count_dedups_and_owner_is_scoped` before it reached
+   Supabase.
+4. **`postgrest.select(..., count="exact")` needs the `CountMethod` enum**,
+   not the string literal `"exact"` — a `mypy --strict` finding, not a
+   runtime one.
+
+## Verification
+
+`ruff check`, `ruff format --check`, and `mypy --strict` all pass on
+`backend/` (the `recipe-ai-backend/` sibling directory has pre-existing,
+unrelated formatting issues from before this session — left untouched,
+out of scope). `pytest -q`: **137 passed** (128 pre-existing + 9 new),
+with no Supabase credentials configured, confirming the in-memory fallback
+path. **Not verified**: an actual live Supabase project (the SQL migration
+in `docs/recipe_magazine_contract.md` has not been run against a real
+database by this session) — the `SupabaseRecipeBookRepository`/
+`SupabaseRecipeMagazineRepository` classes are exercised only by manual
+code review and by mypy, not by an integration test against Postgres.
+Manual browser click-through of the new UI (create → edit → share →
+market search → view as another user → clone) was also not performed in
+this session.
+
+## Deviations
+
+1. **Items are snapshots, not a foreign-key join** — see Summary; a
+   safer implementation of the plan's intent, not a scope change.
+2. **`renderRecipeCard()` (js/ui.js) was *not* reused for the magazine
+   detail modal**, contrary to what the plan proposed — on inspection it
+   has side effects unsuited to a read-only view of someone else's recipe
+   (it mutates `window.mockRecipeData` for cooking mode and binds a
+   "confirm into recipe book" button tied to `window.currentChatId`).
+   `js/magazine.js` has its own small `renderReadonlyRecipeHtml()` instead.
+3. Editing an existing magazine's recipe checklist re-matches previously
+   selected recipes **by title**, not by a stored `recipe_entry_id` (since
+   items are snapshots with no such id) — a minor, disclosed rough edge:
+   two recipe-book entries with the same title would both show as
+   "selected" even if only one was originally added.
+
+## Open issues and risks
+
+1. **Same `X-User-Id`-is-not-auth risk as the rest of the app**, now with
+   higher stakes: a public magazine is, by design, fully readable by
+   anyone who can guess/send a `user_id` — fine under the current trust
+   model (documented in `docs/recipe_magazine_contract.md`), but worth
+   re-flagging since "public by design" plus "no real auth" is a sharper
+   combination than the rest of the app's private-by-default resources.
+2. **The Supabase-backed repository code paths are unexercised by any
+   automated test** (see Verification) — recommend running the SQL
+   migration against a real (or a disposable test) Supabase project and
+   manually exercising the full endpoint list before relying on this in
+   anything but local/demo use.
+3. **No caps on recipes-per-magazine or magazines-per-user**, per explicit
+   instruction for v1 — fine for a demo, but worth revisiting if this is
+   ever exposed publicly (unbounded cover uploads into a `bytea` column in
+   particular could grow the database faster than object storage would).
+4. Manual UI click-through not yet performed (see Verification) — the
+   next session (or the user) should open `index.html` against a running
+   backend and walk the create → share → market → clone flow at least
+   once before considering this feature done.
+
+## Next steps
+
+1. Run the SQL migration in `docs/recipe_magazine_contract.md` against a
+   real Supabase project, set `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`, and
+   manually verify the Supabase-backed code paths end-to-end.
+2. Manual browser walk-through of the new UI (see Open issues #4).
+3. Consider whether `recipe_magazine_items` should also record a
+   provenance `recipe_entry_id` (nullable, no FK) purely for the "was this
+   exact entry already added" UX in the editor, rather than the current
+   title-matching workaround (see Deviations #3) — a small, localized
+   change if wanted.
+
+---
+
+# Work Log — Marketplace redesign + a cross-file X-User-Id bug fix
+
+## Summary
+
+1. Reworked the marketplace from a narrow 320px sidebar into a full-page,
+   Notion-template-gallery-style overlay (`#magazine-market-page`): sticky
+   header with search + a Popular/Latest sort toggle, responsive card grid
+   below (cover thumbnail, title, description, recipe/view counts).
+   Backend: `GET /recipe-magazines/market` gained a `sort=popular|latest`
+   query param (`MagazineSort` type alias in
+   `backend/repositories/recipe_magazine_repo.py`), threaded through the
+   protocol, both repo implementations, the service, and the route; new
+   assertions in `test_recipe_magazine_service.py` cover both orderings.
+   Also added a home-icon button to the marketplace header (`toggleMagazineMarket()`'s
+   `×` only closed the overlay; `closeMagazineMarketToHome()` additionally
+   calls the existing `startNewChat()` so there's an explicit way back to
+   the chat screen).
+2. **Bug fix**: the magazine editor's "recipes from your book" checklist
+   always showed empty even when the user had confirmed recipes, because
+   `js/magazine.js` sent the real `X-User-Id` (`localStorage.getItem('chefId')`)
+   while every existing call in `js/ui.js` (starting a chat, sending a
+   message, confirming a recipe, loading the recipe-book sidebar)
+   hardcoded `'test-user'` — two different identities for the same
+   browser session, so recipes confirmed through the normal chat flow were
+   invisible to a `/recipe-book` fetch scoped to the real id. Fixed by
+   making both files agree: `js/ui.js`'s four hardcoded `'test-user'`
+   headers now send `localStorage.getItem('chefId') || 'test-user'`, and
+   `js/magazine.js`'s `magazineHeaders()`/owner check use the same
+   `getChefId() || 'test-user'` fallback, so whichever one identity ends
+   up being used, it's used consistently everywhere.
+
+## Files
+
+**Modified:** `backend/repositories/recipe_magazine_repo.py`, `backend/services/recipe_magazine_service.py`, `backend/api/routes_recipe_magazine.py`, `backend/tests/test_recipe_magazine_service.py`, `pyproject.toml` (`fastapi.Query` added to `flake8-bugbear.extend-immutable-calls` - `Literal`-typed `Query()` defaults aren't recognized as immutable by ruff's built-in heuristic), `docs/recipe_magazine_contract.md`, `index.html` (market page markup, home button), `js/magazine.js`, `js/ui.js` (the four `X-User-Id` sites), `js/i18n.js` (`magazine_sort_popular`/`magazine_sort_latest`).
+
+## Verification
+
+`ruff check`, `ruff format --check`, `mypy --strict` clean on `backend/`; `pytest -q` - 137 passed. `node --check` on both changed JS files. Manual click-through in a real browser was **not** performed by this session for either the marketplace redesign or the id fix - given the id bug was only caught by the user's own manual testing, this is a real gap worth closing before considering the feature done (see prior work log's Open issues #4, still unresolved).
+
+## Open issues
+
+`'test-user'` as a fallback default (rather than requiring a real id) is
+still the pre-existing, documented-elsewhere non-auth pattern for this
+whole app - this fix makes the *inconsistency* go away, it does not add
+real authentication. Anyone with an empty/absent `chefId` in localStorage
+still collapses onto the same shared `'test-user'` identity as everyone
+else in that state.
+
+---
+
+# Work Log — Fix "recipe exists in history but can't add it to a magazine"
+
+## Summary
+
+The previous fix (aligning `X-User-Id` between js/ui.js and js/magazine.js)
+didn't fully solve the user's problem: their history sidebar (populated
+from a Supabase `ai_requests` table the frontend queries **directly**, see
+js/ui.js's `loadRecipeBook()`) showed recipes, but the magazine editor's
+checklist (which queried this backend's `GET /recipe-book`, i.e.
+`recipe_book_entries`/`RecipeBookRepository`) was still empty. Root cause:
+**these are two different, barely-related storage paths for "confirmed
+recipes"** in the current app - `ai_requests` (Supabase, durable, written
+directly from the browser on confirm) is what the history sidebar actually
+shows and what survives backend restarts; this backend's recipe-book
+endpoints are a separate, currently in-memory (hence constantly wiped by
+`uvicorn --reload`) mechanism that the frontend's confirm handler *also*
+writes to, but that isn't what the visible "history" is sourced from.
+
+Fix: changed the magazine feature to source recipes from **wherever the
+user actually sees them** (`ai_requests`, queried directly via
+`supabaseClient` in `js/magazine.js`, mirroring `loadRecipeBook()`) and to
+submit full `Recipe` payloads to the backend rather than
+`recipe_book_entries` ids. This is a real API contract change on the
+brand-new `PUT /recipe-magazines/{id}/items` endpoint:
+`SetMagazineItemsRequest.recipe_entry_ids: list[str]` → `.recipes:
+list[Recipe]`. The ownership-via-`RecipeBookRepository.get_entry()` check
+in `recipe_magazine_service.set_magazine_items()` is gone entirely - it's
+no longer meaningful once the source of truth for "this is one of my
+recipes" is a Supabase query already scoped by the caller's own `user_id`
+on the frontend, not something this backend can or needs to re-verify.
+
+## Files
+
+**Modified:** `backend/schemas/recipe_magazine.py` (`SetMagazineItemsRequest`), `backend/services/recipe_magazine_service.py` (`set_magazine_items()` signature, `RecipeEntryNotFoundError`'s docstring narrowed to just the clone path), `backend/api/routes_recipe_magazine.py` (dropped the now-unused `book_repo` dependency from the items endpoint), `backend/tests/test_recipe_magazine_service.py`, `backend/tests/test_recipe_magazine_endpoints.py` (both updated to the new request shape; removed the now-dead `_seed_recipe_book_entry` test helper), `docs/recipe_magazine_contract.md`, `js/magazine.js` (checklist now reads Supabase `ai_requests` via a new `fetchUsersRecipeHistory()`, keeps a `key -> Recipe` map for `getSelectedRecipes()` since a checkbox's `value` can't hold a full object).
+
+## Deviations
+
+This is a real, disclosed pivot from the original plan's assumption that
+`recipe_book_entries` was **the** source of truth for a user's confirmed
+recipes. That assumption held for the backend-only test suite (which only
+ever exercises the chat→confirm→recipe-book path) but not for the actual
+running app, where the frontend's real "history" UX has, since before this
+feature existed, come from a separate Supabase table written to directly
+from the browser. Discovered only via the user's own manual testing/screenshots
+- not something the backend test suite could have caught, since it never
+touches Supabase at all.
+
+## Open issues
+
+1. **Two overlapping "confirmed recipe" storages still exist**
+   (`ai_requests` and `recipe_book_entries`), and this fix only changed
+   which one the *magazine* feature reads from - `GET /recipe-book` and
+   the history sidebar's fallback path are untouched and still exhibit the
+   original inconsistency. A real fix would pick one source of truth (most
+   likely: finish wiring `SupabaseRecipeBookRepository` into the actual
+   Supabase project and stop writing to `ai_requests` from the frontend at
+   all) rather than growing more features that each pick whichever source
+   happens to work.
+2. **Cloning a magazine item still writes into `recipe_book_entries`**
+   (via `RecipeBookRepository.save_entry()`), not into `ai_requests` - so a
+   viewer who clones a recipe will **not** see it in their own history
+   sidebar (which reads `ai_requests` first), even though `GET
+   /recipe-book` will show it. Not fixed in this pass: doing so from
+   `js/magazine.js` would mean cloning writes to Supabase directly from
+   the frontend (bypassing the backend clone endpoint's response
+   entirely), a bigger change than this bug fix's scope. Flagging clearly
+   so it isn't mistaken for "fixed."
+3. Still not manually verified in a real browser by this session (see
+   prior entries' repeated Open issues #4) - this fix in particular
+   depends on `ai_requests` row shape (`ai_response` being a valid `Recipe`
+   JSON) matching what `Recipe.model_validate()` expects, which was
+   reasoned through but not run against a live Supabase project.
+
+---
+
+# Work Log — Save-from-market with mandatory attribution (replaces clone-to-book)
+
+## Summary
+
+The user asked for the actual "market" use case: a viewer should be able to
+browse any public magazine's recipes and save them into their **own**
+magazines, but never in a way indistinguishable from something they made
+themselves. This replaces the previous `POST
+/recipe-magazines/{id}/items/{item_id}/clone` endpoint (which copied into
+the viewer's recipe *book* - a feature with its own unresolved
+`ai_requests`-vs-`recipe_book_entries` inconsistency, see the prior work
+log's Open issues #2) with `POST
+.../{item_id}/save` (`target_magazine_id` in the body): it appends the item
+into one of the *caller's own magazines* and always stamps
+`RecipeMagazineItem.source_magazine_title` with where it came from - a new,
+optional field on the item, never cleared. Saving an already-re-shared item
+preserves the **original** author's magazine title through the chain,
+rather than relaunder-through-the-intermediate-magazine (tested explicitly
+in `test_saving_a_reshared_item_preserves_original_attribution`).
+
+Ownership enforcement: `save_market_item_to_my_magazine()` reads the source
+via the same `get_detail()` visibility rule as everywhere else (own, or
+public - 404 otherwise) and calls the repository's new `append_item()`,
+which is itself owner-scoped like every other mutating repo method -
+saving into a magazine you don't own 404s, same as every other endpoint.
+
+## Files
+
+**Modified:** `backend/schemas/recipe_magazine.py` (`RecipeMagazineItem.source_magazine_title`, new `SaveMarketItemRequest`), `backend/repositories/recipe_magazine_repo.py` (`append_item()` on the Protocol + both implementations, `source_magazine_title` threaded through `get_detail()`'s row mapping), `backend/services/recipe_magazine_service.py` (`clone_magazine_item` → `save_market_item_to_my_magazine`, attribution-preservation logic), `backend/api/routes_recipe_magazine.py` (`/clone` → `/save`, dropped the now-unused `RecipeBookRepository` dependency from this router entirely), `backend/tests/test_recipe_magazine_service.py` / `test_recipe_magazine_endpoints.py` (rewritten for the new flow, +1 net test for the re-share-attribution case), `docs/recipe_magazine_contract.md` (new column, endpoint row, attribution note), `index.html` (new `#magazine-save-picker-modal`), `js/magazine.js` (`cloneMagazineItem` → `openSaveItemPicker`/`saveItemToMagazine`/`saveItemToNewMagazine`; `renderReadonlyRecipeHtml()` now renders a `📌 Источник: «...»` line whenever `source_magazine_title` is set), `js/i18n.js` (picker strings, ru/en/kk).
+
+## Verification
+
+`ruff`, `ruff format --check`, `mypy --strict` clean; `pytest -q` - 138
+passed (was 137; net +1 after removing the old clone test and adding two
+new save/attribution tests, one of which - re-share-preserves-original -
+covers a case the old clone flow had no equivalent for). As with every
+frontend change this session, **not** manually clicked through in a real
+browser - the picker modal, its z-index stacking over the detail modal,
+and the attribution line's rendering are reasoned through but unverified
+end-to-end.
+
+## Open issues
+
+The prior work log's Open issue #2 (clone writing to a store the history
+sidebar doesn't read from) is now moot - there is no more clone-to-book
+endpoint. Everything else carried over unchanged (two overlapping
+"confirmed recipe" storages still exist for the *editor's own* checklist,
+`'test-user'` fallback is still not real auth, no live-Supabase or
+real-browser verification yet).
+
+---
+
+# Work Log — "Cook this" from a magazine recipe (gesture mode)
+
+## Summary
+
+Added a way to jump straight into the existing gesture-controlled cooking
+screen (`#screen-cooking`, js/ui.js's `startCooking()`/ML module) from any
+recipe shown inside a magazine - your own, or one saved from the market.
+Previously that screen was only reachable by generating a fresh recipe in
+chat via `renderRecipeCard()`'s "Готово" button.
+
+`renderRecipeCard()`'s inline step-data-building logic was extracted into
+`window.buildMockRecipeData(recipe)` (js/ui.js) so it can be reused; a new
+`window.startCookingRecipe(recipe)` (js/magazine.js) feeds that into
+`window.mockRecipeData` and calls the existing `startCooking()` - no
+changes to the cooking screen or gesture logic itself, it's fed the same
+shape of data regardless of where the recipe came from. Since a magazine's
+recipes are shown inside overlays (`z-[55]`-`[70]`) stacked on top of
+`#screen-chat`, and `#screen-cooking` is a sibling of `#screen-chat` with
+no awareness of those overlays, `startCookingRecipe()` first closes every
+magazine overlay (modal/sidebar/market page) so the cooking screen isn't
+left hidden behind one.
+
+Each recipe inside the magazine detail modal (`openMagazineDetail()`, used
+for both your own and a public magazine) now shows a "👋 Готовить" button
+next to the existing save button. Since your own magazines previously only
+opened the *editor* (metadata + checklist, no recipe content or cook
+button) from the "Мои журналы" list, added a small "👁 Смотреть" action
+there too so you can reach the same detail-with-cook-button view for your
+own magazines, not just ones found on the market.
+
+## Files
+
+**Modified:** `js/ui.js` (extracted `buildMockRecipeData`), `js/magazine.js` (`startCookingRecipe`, `cookMagazineItem`, `closeAllMagazineOverlays`, the "👁 Смотреть" action in `loadMyMagazines()`, the cook button in `openMagazineDetail()`).
+
+## Verification
+
+`node --check` on both files; HTML tag balance checked. No backend changes, so the existing 138 backend tests are unaffected/not re-run for this entry. **Not** manually clicked through in a real browser - in particular, the overlay-closing/z-index interaction between the magazine modals and `#screen-cooking`, and whether the ML gesture module (`js/ml.js`, camera permission flow) behaves the same when entered this way vs. from chat, are reasoned through but unverified.
+
+---
+
+# Work Log — "Cook this" reachable directly from the editor, not just the viewer
+
+## Summary
+
+Follow-up to the previous entry: the user pointed out (with a screenshot)
+that the cook button only existed in the read-only detail viewer
+(`openMagazineDetail()`), not in the editor modal (`openMagazineEditor()`)
+- which is what actually opens when you click one of your own magazines in
+the "Мои журналы" list. Added a "Рецепты в этом журнале" section to the
+editor itself, listing the magazine's current items (from the same
+`GET /recipe-magazines/{id}` detail response the editor already fetches to
+populate title/description) with a "👋 Готовить" button on each, so a
+recipe can be cooked without leaving the editor to find the separate
+viewer. The section is hidden entirely for a brand-new (unsaved, itemless)
+magazine.
+
+## Files
+
+**Modified:** `index.html` (`#magazine-editor-current-items-wrapper` section inside the editor modal), `js/magazine.js` (`renderMagazineEditorCurrentItems()`, `cookMagazineEditorItem()`, wired into the existing `openMagazineEditor()` fetch), `js/i18n.js` (`magazine_field_current_items`, ru/en/kk).
+
+## Verification
+
+`node --check`, HTML tag balance - same caveats as the prior entry (no real-browser click-through yet).
+
+---
+
+# Work Log — Fix: camera/gesture session was never torn down between recipes
+
+## Summary
+
+User reported (with a screenshot of a blank/frozen page) that starting a
+second recipe's cooking mode after finishing or exiting a first one
+"glitches and shows nothing," and asked for the session to be fully torn
+down and the camera turned off after any end of cooking.
+
+Root cause, found in `js/ml.js`: `initML()` requested a camera stream,
+created a MediaPipe `GestureRecognizer`, and started a recursive
+`requestAnimationFrame` loop (`predictWebcam`) - but there was **no
+corresponding teardown function at all**. `js/ui.js`'s `endCooking()`
+(the only exit path from `#screen-cooking`, reached both by the manual
+exit button and by `finishRecipe()`'s auto-exit) never stopped anything:
+not the camera's `MediaStream` tracks, not the recognizer's WASM
+resources, not the rAF loop. Since `ml.js` is a real ES module (imported
+via dynamic `import()`, so it's a singleton across the whole page
+lifetime, not re-instantiated), calling `initML()` again for a second
+recipe piled a new camera stream + recognizer + rAF loop on top of the
+still-running previous one, on the same `<video>`/`<canvas>` elements -
+exactly the kind of resource pile-up that produces a frozen/blank page
+after a few cycles.
+
+Fix: added `stopML()` (exported from `js/ml.js`) which stops every track
+on `video.srcObject`, calls `recognizer.close()` to free the WASM/GPU
+resources, and increments a `sessionId` counter that `predictWebcam()`'s
+loop (and every in-flight `await` inside `initML()`) checks against, so
+even a session whose `getUserMedia()`/model-loading was still in flight
+when `stopML()` fires cleans itself up correctly instead of continuing to
+initialize. `initML()` now calls `stopML()` defensively at its own start
+too, so even if some future exit path forgets to call it, the *next*
+`initML()` call self-heals rather than stacking again. `endCooking()`
+(js/ui.js) now dynamically imports `ml.js` and calls `stopML()`, mirroring
+how `startCooking()` already dynamically imports it to call `initML()`.
+
+## Files
+
+**Modified:** `js/ml.js` (`sessionId` guard, exported `stopML()`, `initML()` calls it defensively at the top and checks the id after each `await`, `predictWebcam()` takes and checks `mySessionId`), `js/ui.js` (`endCooking()` now imports and calls `stopML()`).
+
+## Verification
+
+Both files reviewed line-by-line for syntax correctness (Bash's sandboxed syntax-check was transiently unavailable this session - the tool itself, not the code, was blocked). **Not** manually verified in a real browser - in particular, whether `recognizer.close()` is in fact the correct MediaPipe Tasks-Vision API for releasing a `GestureRecognizer` (matches the library's documented pattern, but wasn't exercised live), and whether stopping tracks mid-`getUserMedia()` await (the `mySessionId !== sessionId` branch right after that call) behaves as expected across browsers, should be confirmed by actually cooking two recipes back-to-back.
+
+---
+
+# Work Log — Fix: black screen on a second cooking session (separate bug from the ML one)
+
+## Summary
+
+The previous entry's `stopML()` fix wasn't the whole story - the user
+still saw a black screen on `#screen-cooking` when starting a *second*
+recipe after finishing/exiting a first one. Root cause, found in
+`js/ui.js`, unrelated to the camera/ML session: `endCooking()` sets
+`screenCooking.style.opacity = '0'` directly as an **inline style** (to
+drive its fade-out), and never clears it afterward. `startCooking()`, on
+the next cook, only removed the `opacity-0` **class** to fade back in -
+but a class can never override an inline style with the same property (CSS
+specificity rule: inline always wins), so `screenCooking` stayed stuck at
+`opacity: 0` - visually a black screen - even though it was correctly
+unhidden (`display` was fine, `opacity` wasn't). This is why it "worked"
+the very first time (the class had never been overridden by an inline
+style yet) and broke on every subsequent cook.
+
+Fix: `startCooking()`'s fade-in now also sets `screenCooking.style.opacity
+= '1'` explicitly (mirroring how `endCooking()` explicitly manages
+`screenChat`'s inline opacity on its own fade-in), instead of relying
+solely on class removal.
+
+## Files
+
+**Modified:** `js/ui.js` (`startCooking()`'s rAF callback).
+
+## Verification
+
+`node --check` passed (Bash's classifier-outage was transient and cleared
+partway through this fix). **Not** manually verified in a real browser -
+this fix is reasoned entirely from the CSS specificity rule (inline style
+beats class) and reading both functions side by side; an actual two- or
+three-recipe-in-a-row browser test is still the one thing that would fully
+confirm both this fix and the previous session's `stopML()` fix together.

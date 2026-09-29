@@ -10,6 +10,8 @@ dependencies = [
     "pydantic-settings>=2.4",
     "python-dotenv>=1.0",
     "openai>=1.50",
+    "supabase>=2.9",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -45,7 +47,7 @@ select = ["E", "F", "I", "UP", "B"]
 # convention; this is ruff's documented fix. Needed starting with the chat
 # endpoints (backend/api/routes_chats.py, routes_recipe_book.py), the first
 # place this codebase uses FastAPI's Depends().
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Header"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.File", "fastapi.Query"]
 
 [tool.mypy]
 python_version = "3.12"

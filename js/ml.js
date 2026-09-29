@@ -5,6 +5,14 @@ let lastVideoTime = -1;
 let cooldownUntil = 0;
 const COOLDOWN_MS = 1500; // Немного увеличим задержку от случайных срабатываний
 
+// Bumped every initML()/stopML() call; predictWebcam()'s requestAnimationFrame
+// loop checks it against the id it was started with and stops recursing once
+// it no longer matches - otherwise, without an explicit stop, starting a new
+// cooking session would leave the previous session's camera stream, WASM
+// recognizer, and rAF loop all still running underneath the new one (this is
+// what caused the page to "glitch and show nothing" on a second recipe).
+let sessionId = 0;
+
 // MediaPipe константы
 const WRIST = 0;
 const INDEX_TIP = 8;
@@ -33,6 +41,12 @@ function isFingerFolded(tip, mcp, wrist) {
 }
 
 export async function initML() {
+    // Tear down any previous session first - starting a new one on top of
+    // a still-running camera/recognizer/rAF loop is exactly what caused the
+    // "glitches and shows nothing" bug on a second recipe.
+    stopML();
+    const mySessionId = ++sessionId;
+
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('output_canvas');
     const debugEl = document.getElementById('gesture-debug');
@@ -46,6 +60,8 @@ export async function initML() {
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
     );
 
+    if (mySessionId !== sessionId) return; // stopML() was called while we were awaiting above
+
     recognizer = await GestureRecognizer.createFromOptions(vision, {
         baseOptions: {
             // Подключаем стандартную модель жестов Google
@@ -56,15 +72,26 @@ export async function initML() {
         numHands: 1
     });
 
+    if (mySessionId !== sessionId) {
+        recognizer.close();
+        recognizer = null;
+        return;
+    }
+
     debugEl.innerText = window.translations[localStorage.getItem('chefLang') || 'ru']['ml_camera_starting'] || 'Запуск камеры...';
 
     // 2. Включаем веб-камеру
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        if (mySessionId !== sessionId) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+        }
         video.srcObject = stream;
         video.addEventListener("loadeddata", () => {
+            if (mySessionId !== sessionId) return;
             debugEl.innerText = "Готов к жестам!";
-            predictWebcam(video, canvas, debugEl);
+            predictWebcam(video, canvas, debugEl, mySessionId);
         });
     } catch (err) {
         console.error(err);
@@ -73,8 +100,30 @@ export async function initML() {
     }
 }
 
-function predictWebcam(video, canvas, debugEl) {
-    if (!recognizer) return;
+// Stops the camera stream, closes the WASM recognizer, and cancels the
+// requestAnimationFrame loop - call this whenever cooking mode ends (see
+// js/ui.js's endCooking()), and also called defensively at the start of
+// initML() in case a previous session was never torn down.
+export function stopML() {
+    sessionId++; // invalidates any in-flight initML() awaits and the rAF loop
+
+    const video = document.getElementById('webcam');
+    if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+
+    if (recognizer) {
+        recognizer.close();
+        recognizer = null;
+    }
+
+    lastVideoTime = -1;
+    cooldownUntil = 0;
+}
+
+function predictWebcam(video, canvas, debugEl, mySessionId) {
+    if (mySessionId !== sessionId || !recognizer) return;
 
     const ctx = canvas.getContext("2d");
     
@@ -170,7 +219,7 @@ function predictWebcam(video, canvas, debugEl) {
         }
     }
 
-    requestAnimationFrame(() => predictWebcam(video, canvas, debugEl));
+    requestAnimationFrame(() => predictWebcam(video, canvas, debugEl, mySessionId));
 }
 
 let errorTimeout;
