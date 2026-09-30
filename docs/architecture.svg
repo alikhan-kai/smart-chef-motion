@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 850" width="1500" height="850" role="img" aria-labelledby="t d">
+<title id="t">Smart Chef — архитектура</title>
+<desc id="d">Браузер с распознаванием жестов, Nginx, FastAPI-бэкенд, модуль llm, OpenAI, Supabase и CDN.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1e3a8a"/></marker><marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker></defs>
+<rect width="1500" height="850" fill="#ffffff"/>
+<text x="750.0" y="36" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" font-weight="800" fill="#0f172a">Smart Chef — архитектура</text>
+<rect x="20" y="60" width="290" height="520" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+<text x="34" y="84" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1e3a8a">Браузер (работает локально)</text>
+<rect x="340" y="380" width="240" height="210" rx="14" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+<text x="354" y="404" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#14532d">Docker Compose: frontend</text>
+<rect x="610" y="380" width="300" height="420" rx="14" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="2"/>
+<text x="624" y="404" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#4c1d95">FastAPI backend :8000</text>
+<rect x="950" y="520" width="250" height="200" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+<text x="964" y="544" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#7c2d12">llm/ (без импортов FastAPI)</text>
+<rect x="1240" y="60" width="240" height="740" rx="14" fill="#f0fdfa" stroke="#14b8a6" stroke-width="2"/>
+<text x="1254" y="84" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#134e4a">Внешние сервисы</text>
+<rect x="50" y="100" width="230" height="55" rx="8" fill="#fff" stroke="#3b82f6" stroke-width="2"/>
+<text x="165.0" y="122" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1e3a8a">Webcam</text>
+<text x="165.0" y="141" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">видеопоток остаётся на устройстве</text>
+<rect x="50" y="190" width="230" height="80" rx="8" fill="#fff" stroke="#3b82f6" stroke-width="2"/>
+<text x="165.0" y="212" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1e3a8a">MediaPipe Gesture Recognizer</text>
+<text x="165.0" y="231" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">WASM, работает в браузере</text>
+<text x="165.0" y="250" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">точки кисти (landmarks)</text>
+<rect x="50" y="300" width="230" height="110" rx="8" fill="#fff" stroke="#3b82f6" stroke-width="2"/>
+<text x="165.0" y="322" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1e3a8a">Логика жестов (ml.js)</text>
+<text x="165.0" y="341" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Лайк: вперёд · Дизлайк: назад</text>
+<text x="165.0" y="360" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Peace: таймер · Ладонь: стоп</text>
+<text x="165.0" y="379" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">подсказки при ошибках</text>
+<rect x="50" y="430" width="230" height="100" rx="8" fill="#fff" stroke="#3b82f6" stroke-width="2"/>
+<text x="165.0" y="452" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1e3a8a">UI: Vanilla JS + Tailwind</text>
+<text x="165.0" y="471" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">шаги рецепта, RU / KK / EN</text>
+<text x="165.0" y="490" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">журналы, XP и уровни</text>
+<path d="M165,155 L165,190" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<path d="M165,270 L165,300" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<path d="M165,410 L165,430" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="360" y="430" width="200" height="100" rx="8" fill="#fff" stroke="#22c55e" stroke-width="2"/>
+<text x="460.0" y="452" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#14532d">Nginx :8080</text>
+<text x="460.0" y="471" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">раздаёт статику</text>
+<text x="460.0" y="490" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">проксирует /api/*</text>
+<path d="M280,480 L360,480" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="320" y="470" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">HTTPS /api</text>
+<rect x="630" y="430" width="260" height="100" rx="8" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+<text x="760.0" y="452" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#4c1d95">API routers</text>
+<text x="760.0" y="471" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">/recipes/*, /chats</text>
+<text x="760.0" y="490" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">/recipe-book, /recipe-magazines</text>
+<rect x="630" y="575" width="260" height="100" rx="8" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+<text x="760.0" y="597" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#4c1d95">Services</text>
+<text x="760.0" y="616" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">pipeline, composer,</text>
+<text x="760.0" y="635" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">чат, журналы</text>
+<rect x="630" y="715" width="260" height="70" rx="8" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+<text x="760.0" y="737" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#4c1d95">Repositories</text>
+<text x="760.0" y="756" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Supabase или in-memory</text>
+<path d="M560,480 L630,480" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<path d="M760,530 L760,575" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<path d="M760,675 L760,715" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<rect x="970" y="565" width="210" height="110" rx="8" fill="#fff" stroke="#f97316" stroke-width="2"/>
+<text x="1075.0" y="587" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#7c2d12">recipe_generator</text>
+<text x="1075.0" y="606" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">chat_responder</text>
+<text x="1075.0" y="625" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">промпты + строгая JSON-схема</text>
+<text x="1075.0" y="644" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">валидация Pydantic</text>
+<path d="M890,605 L970,605" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="930" y="597" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">запрос</text>
+<path d="M970,645 L890,645" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="930" y="663" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">рецепт</text>
+<rect x="1260" y="190" width="200" height="80" rx="8" fill="#fff" stroke="#14b8a6" stroke-width="2"/>
+<text x="1360.0" y="212" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#134e4a">CDN</text>
+<text x="1360.0" y="231" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">модель MediaPipe, WASM,</text>
+<text x="1360.0" y="250" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Tailwind</text>
+<rect x="1260" y="565" width="200" height="110" rx="8" fill="#fff" stroke="#14b8a6" stroke-width="2"/>
+<text x="1360.0" y="587" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#134e4a">OpenAI API</text>
+<text x="1360.0" y="606" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Responses API</text>
+<text x="1360.0" y="625" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">+ web_search</text>
+<rect x="1260" y="710" width="200" height="80" rx="22" fill="#fff" stroke="#14b8a6" stroke-width="2"/>
+<text x="1360.0" y="732" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#134e4a">Supabase</text>
+<text x="1360.0" y="751" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">PostgreSQL + auth</text>
+<path d="M280,230 L1260,230" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="770" y="222" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">модель MediaPipe + WASM (загрузка при старте)</text>
+<path d="M1180,620 L1260,620" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="1220" y="596" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">strict JSON</text>
+<text x="1220" y="611" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">+ web_search</text>
+<path d="M890,750 L1260,750" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="1075" y="742" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">service key (только бэкенд)</text>
+<path d="M165,530 L165,828 L1360,828 L1360,790" fill="none" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="700" y="820" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#1f2937" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">anon key: вход, XP, история (напрямую из браузера)</text>
+<path d="M760,380 L760,345 L1075,345 L1075,520" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#p)"/>
+<text x="917" y="337" text-anchor="middle" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#5b21b6" stroke="#fff" stroke-width="5" paint-order="stroke" stroke-linejoin="round">backend импортирует llm (обратной зависимости нет)</text>
+<rect x="640" y="70" width="560" height="100" rx="10" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="656" y="94" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Обозначения</text>
+<rect x="656" y="106" width="14" height="14" rx="3" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+<text x="676" y="118" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Клиент</text>
+<rect x="761" y="106" width="14" height="14" rx="3" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+<text x="781" y="118" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Edge</text>
+<rect x="866" y="106" width="14" height="14" rx="3" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="2"/>
+<text x="886" y="118" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Backend</text>
+<rect x="971" y="106" width="14" height="14" rx="3" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+<text x="991" y="118" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">LLM</text>
+<rect x="1076" y="106" width="14" height="14" rx="3" fill="#f0fdfa" stroke="#14b8a6" stroke-width="2"/>
+<text x="1096" y="118" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Внешние</text>
+<path d="M656,144 L706,144" stroke="#1e3a8a" stroke-width="2" marker-end="url(#a)"/>
+<text x="716" y="148" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">поток данных / запрос</text>
+<path d="M920,144 L970,144" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#p)"/>
+<text x="980" y="148" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#374151">зависимость по импорту</text>
+<text x="1480" y="840" text-anchor="end" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">smartchef.ailab-sdu.com</text>
+</svg>
