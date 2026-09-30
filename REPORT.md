@@ -1,5 +1,25 @@
 # Work Log
 
+## GPT-6 Luna model and pricing configuration (2026-09-30)
+
+### Summary
+
+- Changed the default recipe model to `gpt-6-luna` in `.env.example` and the
+  local ignored `.env` file.
+- Updated spend estimates to GPT-6 Luna Standard short-context rates: $0.10/M
+  input, $0.01/M cached input, $0.125/M cache writes, $0.50/M output, and
+  $0.01 per web-search action.
+- Added cache-write token accounting so those tokens are not charged as regular
+  input. Long-context requests above 272K input tokens and other service tiers
+  require separate rates.
+
+### Verification
+
+- Prices and the model identifier were checked against the official OpenAI
+  model and pricing documentation on 2026-09-30.
+- Python byte-compilation, focused cost-estimation smoke checks, and
+  `git diff --check` passed without making a paid API request.
+
 ## Per-request OpenAI spend telemetry (2026-09-30)
 
 ### Summary
@@ -8,14 +28,15 @@
   initial recipe generation, optional two-step generation, and chat revisions.
   Retries are logged separately and share a random `workflow_id`, making their
   combined user-request cost visible.
-- Each successful event records model, latency, input/cached/output/reasoning
-  tokens, total tokens, actual web-search action count, and estimated USD cost.
+- Each successful event records model, latency, input/cached/cache-write/output/
+  reasoning tokens, total tokens, actual web-search action count, and estimated
+  USD cost.
   Failures record only exception type and explicitly mark usage unavailable;
   prompts, recipe content, credentials, and exception bodies are never logged.
 - Pricing is environment-configurable and guarded by `OPENAI_PRICING_MODEL`.
   A model mismatch keeps the raw usage but returns a null estimate rather than
-  applying the wrong price. Defaults match GPT-5 standard pricing checked on the
-  official OpenAI pricing pages on 2026-09-30.
+  applying the wrong price. Defaults now match GPT-6 Luna Standard short-context
+  pricing checked on the official OpenAI pricing pages on 2026-09-30.
 
 ### Files
 

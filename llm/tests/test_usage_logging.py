@@ -8,10 +8,10 @@ from llm.config import LLMSettings
 from llm.usage_logging import call_with_usage_logging, log_response_usage
 
 
-def _settings(pricing_model: str = "gpt-5") -> LLMSettings:
+def _settings(pricing_model: str = "gpt-6-luna") -> LLMSettings:
     return LLMSettings(
         openai_api_key="sk-test",
-        openai_model="gpt-5",
+        openai_model="gpt-6-luna",
         openai_pricing_model=pricing_model,
     )
 
@@ -24,7 +24,10 @@ def _response() -> SimpleNamespace:
             input_tokens=1000,
             output_tokens=100,
             total_tokens=1100,
-            input_tokens_details=SimpleNamespace(cached_tokens=200),
+            input_tokens_details=SimpleNamespace(
+                cached_tokens=200,
+                cache_write_tokens=100,
+            ),
             output_tokens_details=SimpleNamespace(reasoning_tokens=40),
         ),
         output=[
@@ -44,7 +47,7 @@ def test_usage_log_includes_tokens_search_and_estimated_cost(
             _response(),
             operation="recipe.structured.attempt_1",
             workflow_id="workflow-1",
-            model="gpt-5",
+            model="gpt-6-luna",
             elapsed_ms=250,
             settings=_settings(),
         )
@@ -52,10 +55,11 @@ def test_usage_log_includes_tokens_search_and_estimated_cost(
     event = json.loads(caplog.records[-1].message)
     assert event["input_tokens"] == 1000
     assert event["cached_input_tokens"] == 200
+    assert event["cache_write_tokens"] == 100
     assert event["output_tokens"] == 100
     assert event["reasoning_tokens"] == 40
     assert event["web_search_actions"] == 1
-    assert event["estimated_cost_usd"] == 0.012025
+    assert event["estimated_cost_usd"] == 0.0101345
     assert "prompt" not in event
 
 
@@ -67,9 +71,9 @@ def test_cost_is_omitted_when_model_does_not_match_pricing_model(
             _response(),
             operation="chat.response.attempt_1",
             workflow_id="workflow-2",
-            model="gpt-5-mini",
+            model="gpt-6-sol",
             elapsed_ms=100,
-            settings=_settings(pricing_model="gpt-5"),
+            settings=_settings(pricing_model="gpt-6-luna"),
         )
 
     event = json.loads(caplog.records[-1].message)
@@ -91,7 +95,7 @@ async def test_failed_attempt_logs_error_without_sensitive_body(
             fail,
             operation="recipe.structured.attempt_1",
             workflow_id="workflow-3",
-            model="gpt-5",
+            model="gpt-6-luna",
         )
 
     event = json.loads(caplog.records[-1].message)

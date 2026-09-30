@@ -10,12 +10,13 @@ class LLMSettings(BaseSettings):
     two_step_mode: bool = False
 
     # Cost estimates are emitted with each Responses API usage log. These
-    # defaults match GPT-5 standard pricing checked on 2026-09-30. If the app
-    # changes models, set OPENAI_PRICING_MODEL and the rates together.
-    openai_pricing_model: str = "gpt-5"
-    openai_input_cost_per_million_usd: float = 1.25
-    openai_cached_input_cost_per_million_usd: float = 0.125
-    openai_output_cost_per_million_usd: float = 10.0
+    # defaults match GPT-6 Luna standard short-context pricing checked on
+    # 2026-09-30. If the app changes models, update all rates together.
+    openai_pricing_model: str = "gpt-6-luna"
+    openai_input_cost_per_million_usd: float = 0.10
+    openai_cached_input_cost_per_million_usd: float = 0.01
+    openai_cache_write_cost_per_million_usd: float = 0.125
+    openai_output_cost_per_million_usd: float = 0.50
     openai_web_search_cost_per_call_usd: float = 0.01
 
     # Chat/revision settings (see llm/chat_responder.py, backend/services/chat_service.py).

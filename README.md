@@ -107,10 +107,10 @@ npx serve -l 8080
 | Переменная | Обязательна | По умолчанию | Описание |
 |---|---|---|---|
 | `OPENAI_API_KEY` | да | — | Ключ OpenAI |
-| `OPENAI_MODEL` | да | `gpt-5` в `.env.example` | Модель для генерации рецептов |
+| `OPENAI_MODEL` | да | `gpt-6-luna` в `.env.example` | Модель для генерации рецептов |
 | `OPENAI_TIMEOUT_SECONDS` | нет | `60` | Таймаут запроса к модели |
 | `TWO_STEP_MODE` | нет | `false` | Запасной режим: поиск и текст, затем конвертация в строгий JSON |
-| `OPENAI_PRICING_MODEL` и тарифы | нет | тариф GPT-5 | Оценка стоимости в JSON-логах ([инструкция](docs/api_cost_logging.md)) |
+| `OPENAI_PRICING_MODEL` и тарифы | нет | GPT-6 Luna Standard short-context | Оценка стоимости в JSON-логах ([инструкция](docs/api_cost_logging.md)) |
 | `SUPABASE_URL` | нет | пусто | Адрес проекта Supabase для хранения на бэкенде |
 | `SUPABASE_SERVICE_KEY` | нет | пусто | Service role key (не anon), только для бэкенда |
 | `YANDEX_ALICE_SKILL_ID` | нет | пусто | ID навыка для проверки входящих webhook-запросов Алисы |

@@ -38,15 +38,17 @@ def _estimated_cost(
     model: str,
     input_tokens: int,
     cached_tokens: int,
+    cache_write_tokens: int,
     output_tokens: int,
     web_search_actions: int,
 ) -> float | None:
     if model != settings.openai_pricing_model:
         return None
-    uncached_tokens = max(0, input_tokens - cached_tokens)
+    uncached_tokens = max(0, input_tokens - cached_tokens - cache_write_tokens)
     token_cost = (
         uncached_tokens * settings.openai_input_cost_per_million_usd
         + cached_tokens * settings.openai_cached_input_cost_per_million_usd
+        + cache_write_tokens * settings.openai_cache_write_cost_per_million_usd
         + output_tokens * settings.openai_output_cost_per_million_usd
     ) / 1_000_000
     search_cost = web_search_actions * settings.openai_web_search_cost_per_call_usd
@@ -72,6 +74,7 @@ def log_response_usage(
     input_details = _value(usage, "input_tokens_details")
     output_details = _value(usage, "output_tokens_details")
     cached_tokens = int(_value(input_details, "cached_tokens", 0) or 0)
+    cache_write_tokens = int(_value(input_details, "cache_write_tokens", 0) or 0)
     reasoning_tokens = int(_value(output_details, "reasoning_tokens", 0) or 0)
     search_actions = _web_search_actions(response)
     estimated_cost = None
@@ -81,6 +84,7 @@ def log_response_usage(
             model=model,
             input_tokens=input_tokens,
             cached_tokens=cached_tokens,
+            cache_write_tokens=cache_write_tokens,
             output_tokens=output_tokens,
             web_search_actions=search_actions,
         )
@@ -95,6 +99,7 @@ def log_response_usage(
         "elapsed_ms": elapsed_ms,
         "input_tokens": input_tokens,
         "cached_input_tokens": cached_tokens,
+        "cache_write_tokens": cache_write_tokens,
         "output_tokens": output_tokens,
         "reasoning_tokens": reasoning_tokens,
         "total_tokens": total_tokens,
