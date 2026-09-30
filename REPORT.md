@@ -1,5 +1,12 @@
 # Work Log
 
+## User-facing Alice re-pairing (2026-09-30)
+
+- Added a discreet re-pair action that appears only after Alice is connected.
+- It creates a fresh six-digit code and moves the current browser cooking
+  session to another Station without DevTools or a backend restart.
+- Added Russian, English, and Kazakh labels and documented the flow.
+
 ## Recipe language propagation and dynamic UI translations (2026-09-30)
 
 - Confirmed `90bb5b9` is present on main. It changed the generation prompt but

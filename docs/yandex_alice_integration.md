@@ -44,6 +44,10 @@ command; the Smart Chef browser owns the countdown and alarm.
 6. While the skill is active, say a timer command. If the Alice skill session
    has timed out, invoke the skill again; the pairing remains in place while the
    backend process is running.
+7. To move the browser session from the Dialogs test console or an old Station
+   to another real Station, click the discreet **Reconnect another Station**
+   action below the connected status and say the newly generated code on that
+   Station. No browser storage cleanup or backend restart is required.
 
 The webhook and private-skill setup are performed once by the Smart Chef
 developer. A regular user only opens cooking mode, presses the connection

@@ -15,6 +15,7 @@
     function elements() {
         return {
             button: document.getElementById('alice-connect-btn'),
+            reconnectButton: document.getElementById('alice-reconnect-btn'),
             status: document.getElementById('alice-status'),
             code: document.getElementById('alice-pairing-code')
         };
@@ -50,6 +51,9 @@
         ui.button.classList.toggle('text-violet-700', !connected);
         ui.button.classList.toggle('border-violet-100', !connected);
         ui.button.disabled = connected;
+        if (ui.reconnectButton) {
+            ui.reconnectButton.classList.toggle('hidden', !connected);
+        }
     }
 
     function setStatus(message, code) {
@@ -214,6 +218,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         const ui = elements();
         if (ui.button) ui.button.addEventListener('click', connect);
+        if (ui.reconnectButton) ui.reconnectButton.addEventListener('click', connect);
         if (readConnection()) {
             setStatus(translated(
                 'alice_checking',
