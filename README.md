@@ -193,7 +193,7 @@ uv run --frozen mypy backend llm
 |---|---|
 | Майлыбай Алихан | Full-stack developer |
 | Тлеубаев Ансар | AI engineer |
-| Амир | DevOps engineer |
+| Амир Тухтахунов | DevOps engineer |
 | Ақарыс Сансызбайұлы | ML engineer |
 
 Сделано для **ADMIT HACKATHON**. Лицензия: [LICENSE](LICENSE).
