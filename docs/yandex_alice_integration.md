@@ -1,5 +1,12 @@
 # Yandex Station / Alice timer integration
 
+## Current demo status
+
+As reported by the team on September 30, 2026, the Smart Chef skill has been
+submitted for moderation. Public availability is not yet confirmed. The pairing
+instructions below apply to accounts with testing access or after publication;
+the browser's gesture-control scenario does not require the Alice skill.
+
 Smart Chef exposes a Yandex Dialogs webhook that lets an Alice custom skill
 control the timer in the open cooking page. The Station receives the voice
 command; the Smart Chef browser owns the countdown and alarm.
