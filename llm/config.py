@@ -9,6 +9,15 @@ class LLMSettings(BaseSettings):
     openai_timeout_seconds: float = 60.0
     two_step_mode: bool = False
 
+    # Cost estimates are emitted with each Responses API usage log. These
+    # defaults match GPT-5 standard pricing checked on 2026-09-30. If the app
+    # changes models, set OPENAI_PRICING_MODEL and the rates together.
+    openai_pricing_model: str = "gpt-5"
+    openai_input_cost_per_million_usd: float = 1.25
+    openai_cached_input_cost_per_million_usd: float = 0.125
+    openai_output_cost_per_million_usd: float = 10.0
+    openai_web_search_cost_per_call_usd: float = 0.01
+
     # Chat/revision settings (see llm/chat_responder.py, backend/services/chat_service.py).
     revise_model: str | None = None
     """Model used for respond_to_message(); falls back to openai_model if unset."""

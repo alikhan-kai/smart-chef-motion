@@ -1,4 +1,5 @@
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let timerAlarmInterval = null;
 
 function playTone(freq, type, duration, vol=0.1) {
     if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -54,6 +55,22 @@ function playTimerStopSound() {
     setTimeout(() => playTone(330, 'sine', 0.4, 0.2), 150);
 }
 
+function stopTimerAlarmSound() {
+    if (timerAlarmInterval) clearInterval(timerAlarmInterval);
+    timerAlarmInterval = null;
+}
+
+function playTimerAlarmSound() {
+    stopTimerAlarmSound();
+    const pulse = () => {
+        playTone(880, 'square', 0.25, 0.22);
+        setTimeout(() => playTone(880, 'square', 0.25, 0.22), 350);
+        setTimeout(() => playTone(1046.5, 'square', 0.4, 0.22), 700);
+    };
+    pulse();
+    timerAlarmInterval = setInterval(pulse, 1800);
+}
+
 function playSuccessSound() {
     // Красивый аккорд (C major arpeggio)
     const notes = [261.63, 329.63, 392.00, 523.25];
@@ -69,5 +86,7 @@ window.AppAudio = {
     pageTurn: playPageTurnSound,
     timerStart: playTimerStartSound,
     timerStop: playTimerStopSound,
+    timerAlarm: playTimerAlarmSound,
+    stopTimerAlarm: stopTimerAlarmSound,
     success: playSuccessSound
 };

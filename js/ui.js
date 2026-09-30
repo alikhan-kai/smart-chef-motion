@@ -288,6 +288,8 @@ function startCooking() {
     if (window.completedSteps) window.completedSteps.clear();
         updateRecipeUI();
 
+        if (window.YandexAlice) window.YandexAlice.startPolling();
+
         import('./ml.js').then(module => {
             if (module.initML) module.initML();
         }).catch(err => {
@@ -302,6 +304,7 @@ window.endCooking = function() {
     const screenChat = document.getElementById('screen-chat');
 
     if (window.stopTimer) window.stopTimer();
+    if (window.YandexAlice) window.YandexAlice.stopPolling();
 
     // Stop the camera/gesture-recognizer session - without this, starting a
     // new recipe on top of a still-running one is what caused the page to
@@ -370,15 +373,22 @@ function updateRecipeUI() {
         clearInterval(window.activeTimerInterval);
         window.activeTimerInterval = null;
     }
+    window.activeTimerDeadline = null;
+    window.timerHasExpired = false;
+    if (window.AppAudio) window.AppAudio.stopTimerAlarm();
 
     if (step.timer) {
         timerContainer.classList.remove('hidden');
         window.currentStepTimeLeft = step.timer;
+        window.currentStepExpectedSeconds = step.timer;
         updateTimerDisplay(window.currentStepTimeLeft);
     } else {
         timerContainer.classList.add('hidden');
         window.currentStepTimeLeft = 0;
+        window.currentStepExpectedSeconds = null;
     }
+
+    if (window.YandexAlice) window.YandexAlice.syncExpectedTimer();
 }
 
 function updateTimerDisplay(secondsTotal) {
@@ -389,25 +399,47 @@ function updateTimerDisplay(secondsTotal) {
 }
 
 window.startTimer = function() {
-    if (window.AppAudio) window.AppAudio.timerStart();
     if (!window.currentStepTimeLeft || window.activeTimerInterval) return;
+    if (window.AppAudio) {
+        window.AppAudio.stopTimerAlarm();
+        window.AppAudio.timerStart();
+    }
+    window.timerHasExpired = false;
+    window.activeTimerDeadline = Date.now() + (window.currentStepTimeLeft * 1000);
     
     const timerContainer = document.getElementById('step-timer-container').querySelector('div');
     timerContainer.classList.add('border-green-500', 'shadow-[6px_6px_0_#22c55e]'); 
     timerContainer.classList.remove('border-[#8B7355]', 'shadow-[6px_6px_0_#8B7355]');
 
-    window.activeTimerInterval = setInterval(() => {
-        if (window.currentStepTimeLeft > 0) {
-            window.currentStepTimeLeft--;
-            updateTimerDisplay(window.currentStepTimeLeft);
-        } else {
+    const tick = () => {
+        const millisecondsLeft = window.activeTimerDeadline - Date.now();
+        window.currentStepTimeLeft = Math.max(0, Math.ceil(millisecondsLeft / 1000));
+        updateTimerDisplay(window.currentStepTimeLeft);
+
+        if (millisecondsLeft <= 0) {
             clearInterval(window.activeTimerInterval);
             window.activeTimerInterval = null;
-            timerContainer.classList.remove('border-green-500', 'shadow-[6px_6px_0_#22c55e]');
-            timerContainer.classList.add('border-[#8B7355]', 'shadow-[6px_6px_0_#8B7355]');
-            alert("⏰ Время вышло!");
+            window.activeTimerDeadline = null;
+            window.timerHasExpired = true;
+            timerContainer.classList.remove(
+                'border-green-500',
+                'shadow-[6px_6px_0_#22c55e]',
+                'border-[#8B7355]',
+                'shadow-[6px_6px_0_#8B7355]'
+            );
+            timerContainer.classList.add('border-red-500', 'shadow-[6px_6px_0_#ef4444]');
+            if (window.AppAudio) window.AppAudio.timerAlarm();
+            const aliceStatus = document.getElementById('alice-status');
+            if (aliceStatus) {
+                aliceStatus.textContent = window.t
+                    ? window.t('alice_time_up')
+                    : '⏰ Время вышло — скажите «останови таймер» или покажите ладонь';
+            }
         }
-    }, 1000);
+    };
+
+    window.activeTimerInterval = setInterval(tick, 250);
+    tick();
 }
 
 // XP awarded once per completed recipe step.
@@ -462,15 +494,33 @@ window.updateGestureDebug = function(text) {
 }
 
 window.stopTimer = function() {
-    if (window.AppAudio) window.AppAudio.timerStop();
+    const wasActive = Boolean(window.activeTimerInterval || window.timerHasExpired);
+    if (window.activeTimerDeadline) {
+        window.currentStepTimeLeft = Math.max(
+            0,
+            Math.ceil((window.activeTimerDeadline - Date.now()) / 1000)
+        );
+        updateTimerDisplay(window.currentStepTimeLeft);
+    }
     if (window.activeTimerInterval) {
         clearInterval(window.activeTimerInterval);
         window.activeTimerInterval = null;
-        
-        const timerContainer = document.getElementById('step-timer-container').querySelector('div');
-        timerContainer.classList.remove('border-green-500', 'shadow-[6px_6px_0_#22c55e]'); 
-        timerContainer.classList.add('border-[#8B7355]', 'shadow-[6px_6px_0_#8B7355]');
     }
+    window.activeTimerDeadline = null;
+    window.timerHasExpired = false;
+    if (window.AppAudio) {
+        window.AppAudio.stopTimerAlarm();
+        if (wasActive) window.AppAudio.timerStop();
+    }
+
+    const timerContainer = document.getElementById('step-timer-container').querySelector('div');
+    timerContainer.classList.remove(
+        'border-green-500',
+        'shadow-[6px_6px_0_#22c55e]',
+        'border-red-500',
+        'shadow-[6px_6px_0_#ef4444]'
+    );
+    timerContainer.classList.add('border-[#8B7355]', 'shadow-[6px_6px_0_#8B7355]');
 };
 
 window.finishRecipe = function() {

@@ -339,6 +339,14 @@
                       <p id="gesture-debug" data-i18n="gesture_waiting" class="font-bold text-claude-accent text-sm md:text-xl leading-tight">Ожидание жеста...</p>
                   </div>
               </div>
+
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 text-center">
+                  <button id="alice-connect-btn" type="button" data-i18n="alice_connect" aria-pressed="false" class="w-full py-2 bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition font-medium border border-violet-100 text-sm disabled:cursor-default">
+                      🎙 Подключить Алису
+                  </button>
+                  <div id="alice-pairing-code" class="hidden mt-2 font-mono text-2xl font-bold tracking-[0.2em] text-gray-800"></div>
+                  <p id="alice-status" data-i18n="alice_helper" class="mt-2 text-xs leading-relaxed text-gray-500">Управляйте таймером голосом через Яндекс Станцию</p>
+              </div>
               
               <button onclick="endCooking()" data-i18n="end_cooking_btn" class="w-full py-2 md:py-4 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition font-medium border border-red-100 shadow-sm text-sm md:text-base">
                   Завершить готовку
@@ -448,5 +456,6 @@
     <script src="js/magazine.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="js/audio.js"></script>
+    <script src="js/yandex-alice.js"></script>
 </body>
 </html>

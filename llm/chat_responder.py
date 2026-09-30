@@ -10,6 +10,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI, RateLimitError
 from openai.types.responses.response_format_text_json_schema_config_param import (
@@ -29,6 +30,7 @@ from llm.errors import (
     ValidationFailedError,
 )
 from llm.schemas import RawRecipe
+from llm.usage_logging import call_with_usage_logging
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 SYSTEM_PROMPT_PATH = PROMPTS_DIR / "revise_system_prompt.md"
@@ -101,16 +103,35 @@ def _parse_chat_response(output_text: str) -> ChatResponse:
     return ChatResponse.model_validate(data)
 
 
-async def _call(client: AsyncOpenAI, model: str, input_messages: ResponseInputParam) -> str:
+async def _call(
+    client: AsyncOpenAI,
+    model: str,
+    input_messages: ResponseInputParam,
+    workflow_id: str,
+    attempt: int,
+) -> str:
     text_config: ResponseTextConfigParam = {"format": _load_schema_format()}
     settings = get_llm_settings()
     if settings.revise_use_web_search:
-        response = await client.responses.create(
-            model=model, input=input_messages, tools=_WEB_SEARCH_TOOLS, text=text_config
+        response = await call_with_usage_logging(
+            lambda: client.responses.create(
+                model=model,
+                input=input_messages,
+                tools=_WEB_SEARCH_TOOLS,
+                text=text_config,
+            ),
+            operation=f"chat.response.attempt_{attempt}",
+            workflow_id=workflow_id,
+            model=model,
         )
     else:
-        response = await client.responses.create(
-            model=model, input=input_messages, text=text_config
+        response = await call_with_usage_logging(
+            lambda: client.responses.create(
+                model=model, input=input_messages, text=text_config
+            ),
+            operation=f"chat.response.attempt_{attempt}",
+            workflow_id=workflow_id,
+            model=model,
         )
     return response.output_text
 
@@ -142,13 +163,20 @@ async def respond_to_message(
     client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout_seconds)
     model = settings.revise_model or settings.openai_model
     input_messages = _build_input(current_recipe, history, user_message, patch_error)
+    workflow_id = uuid4().hex
+    attempt = 1
 
     try:
         try:
-            output_text = await _call(client, model, input_messages)
+            output_text = await _call(
+                client, model, input_messages, workflow_id, attempt
+            )
             return _parse_chat_response(output_text)
         except (json.JSONDecodeError, ValidationError):
-            output_text = await _call(client, model, input_messages)
+            attempt += 1
+            output_text = await _call(
+                client, model, input_messages, workflow_id, attempt
+            )
             try:
                 return _parse_chat_response(output_text)
             except (json.JSONDecodeError, ValidationError) as exc:

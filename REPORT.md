@@ -1,5 +1,138 @@
 # Work Log
 
+## Per-request OpenAI spend telemetry (2026-09-30)
+
+### Summary
+
+- Added structured JSON usage logging around every paid Responses API attempt in
+  initial recipe generation, optional two-step generation, and chat revisions.
+  Retries are logged separately and share a random `workflow_id`, making their
+  combined user-request cost visible.
+- Each successful event records model, latency, input/cached/output/reasoning
+  tokens, total tokens, actual web-search action count, and estimated USD cost.
+  Failures record only exception type and explicitly mark usage unavailable;
+  prompts, recipe content, credentials, and exception bodies are never logged.
+- Pricing is environment-configurable and guarded by `OPENAI_PRICING_MODEL`.
+  A model mismatch keeps the raw usage but returns a null estimate rather than
+  applying the wrong price. Defaults match GPT-5 standard pricing checked on the
+  official OpenAI pricing pages on 2026-09-30.
+
+### Files
+
+- `llm/usage_logging.py`, `llm/config.py`
+- `llm/recipe_generator.py`, `llm/chat_responder.py`
+- `llm/tests/test_usage_logging.py`
+- `.env.example`, `docs/api_cost_logging.md`, `README.md`
+
+### Verification
+
+- Python byte-compilation and `git diff --check` passed.
+- Added focused logging tests for cached/reasoning tokens, web-search fees,
+  model pricing mismatch, and safe error logging without exception bodies. The
+  repository's runtime/tool images do not contain pytest, so a read-only runtime
+  import and telemetry smoke test was executed instead; no paid API call ran.
+- The six existing offline benchmark tests passed with the system Python.
+- Resolved pre-existing merge-conflict markers in `.gitignore` to the union of
+  both sides; `.env`, virtual environments, caches, logs, and `node_modules`
+  remain ignored.
+
+## Alice connection UX and recipe-duration validation (2026-09-30)
+
+### Summary
+
+- Fast-forwarded the current branch to `origin/main` at `90bb5b9`, bringing in
+  the requested-language LLM prompt fix plus the upstream README/demo updates.
+- Made successful Alice pairing visually explicit: the connection button turns
+  green, changes to a checked “connected” label, and the nearby status confirms
+  that voice control is active. Pairing instructions and all new browser status
+  text now have Russian, English, and Kazakh translations.
+- Added current-step timer synchronization from the browser to the backend. A
+  voice duration that differs from a recipe step's expected duration is rejected
+  by Alice, never queued, and also rejected defensively in the browser. Arbitrary
+  durations remain allowed on steps without a recipe timer.
+
+### Verification
+
+- Python byte-compilation and `git diff --check` passed.
+- A containerized FastAPI HTTP smoke test verified that a 10-minute voice timer
+  is rejected for a 20-minute recipe step, queues no command, and that the
+  correct 20-minute command is accepted.
+- `node --check` passed for the Alice bridge, timer UI, audio, and localization
+  files using the existing Node 22 container image.
+
+## Yandex Station voice timer MVP (2026-09-30)
+
+### Summary
+
+- Added a Yandex Dialogs webhook and a short-lived six-digit pairing flow that
+  links one Alice application id to one browser cooking session.
+- Added voice commands for starting the recipe step timer, starting a custom
+  hour/minute/second duration, and stopping the timer. The cooking UI polls with
+  an opaque token and applies each cursor-based command once.
+- Reworked the browser countdown around an absolute deadline and added a
+  non-blocking repeating alarm. Unlike the former blocking alert, the alarm can
+  be silenced by either the open-palm gesture or an Alice stop command.
+- Added an Alice connection panel to cooking mode, optional skill-id validation,
+  focused endpoint tests, and deployment/setup documentation. This controls the
+  Smart Chef web timer; it does not claim to create Yandex Station's native timer.
+
+### Files
+
+- `backend/api/routes_yandex_alice.py`
+- `backend/schemas/yandex_alice.py`
+- `backend/services/yandex_alice_service.py`
+- `backend/tests/test_yandex_alice_endpoints.py`
+- `backend/config.py`, `backend/main.py`, `.env.example`
+- `js/yandex-alice.js`, `js/ui.js`, `index.html`
+- `docs/yandex_alice_integration.md`, `README.md`
+
+### Verification
+
+- Python byte-compilation and `git diff --check` passed. The existing backend
+  container image, with the new `backend/` mounted read-only, passed both a
+  service smoke test and an HTTP smoke test covering pairing, webhook handling,
+  a 90-second command, polling, and response validation.
+- `node --check` passed for `js/yandex-alice.js`, `js/ui.js`, and `js/audio.js`
+  using the repository's existing Node 22 image. Focused pytest tests were added,
+  but pytest is absent from both the host and runtime-only backend image.
+- A fresh legacy-Docker build did not reach application code because that builder
+  ignored the Dockerfile-specific ignore file and applied the frontend-only root
+  `.dockerignore`; the existing runtime image was used for verification instead.
+  Real Station testing still requires a public HTTPS webhook and a published
+  private skill in Yandex Dialogs.
+
+## Opt-in model benchmark (2026-09-29)
+
+### Summary
+
+- Added `scripts/compare_recipe_models.py`: requires explicit model selection and
+  `--run-paid`, reuses the deployed prompt/schema and composer, records response
+  tokens (including reasoning), latency, technical failures and search actions.
+- Uses three synthetic recipe cases, sequential calls, no retries, bounded output
+  and wall-clock wait. It does not change models, environment files, app state or
+  persistence. Outputs go to a newly created temporary directory.
+- Saves a model-blinded recipe review sheet with a human rubric. Schema success
+  is not represented as a culinary quality or safety score. Initial generation
+  only: chat revisions, proxies and production retry behavior are not benchmarked.
+- Projections cover configurable generation counts, clearly separating observed
+  usage costs, tool fees and approximate search-content allowances. Failed calls
+  without usage are marked unknown rather than free. Actual billing is authoritative.
+
+### Files
+
+- `scripts/compare_recipe_models.py`
+- `scripts/test_compare_recipe_models.py` (offline stdlib tests)
+- `REPORT.md`
+
+### Verification
+
+- No paid API calls made, credentials read, server changes or Git pushes performed.
+- Six offline stdlib tests passed (cost accounting, missing usage, opt-in dry run,
+  successful response capture, validation failure accounting, timeout and redaction).
+  Dry-run CLI and `git diff --check` passed. This environment has no installed
+  project dependencies, pytest, ruff or mypy; full project/SDK execution was not
+  verified here. Run the opt-in benchmark inside the deployed backend container.
+
 ## Step-header backward compatibility (2026-09-29)
 
 ### Summary

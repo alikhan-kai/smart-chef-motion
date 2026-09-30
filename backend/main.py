@@ -9,6 +9,7 @@ from backend.api.routes_create import router as create_router
 from backend.api.routes_generate_raw import router as generate_raw_router
 from backend.api.routes_recipe_book import router as recipe_book_router
 from backend.api.routes_recipe_magazine import router as recipe_magazine_router
+from backend.api.routes_yandex_alice import router as yandex_alice_router
 from backend.config import get_backend_settings
 from backend.repositories.chat_repo import InMemoryChatRepository
 from backend.repositories.recipe_book_repo import (
@@ -28,6 +29,7 @@ from backend.services.chat_service import (
 from backend.services.recipe_book_service import RecipeNotFoundError
 from backend.services.recipe_composer import CompositionError
 from backend.services.recipe_magazine_service import MagazineNotFoundError, RecipeEntryNotFoundError
+from backend.services.yandex_alice_service import YandexAliceService
 from llm.errors import (
     ModelReportedError,
     UpstreamError,
@@ -59,6 +61,7 @@ def create_app() -> FastAPI:
     # (see backend/tests/test_chat_endpoints.py) still gets its own isolated
     # in-memory store.
     app.state.chat_repository = InMemoryChatRepository()
+    app.state.yandex_alice_service = YandexAliceService()
 
     settings = get_backend_settings()
     if settings.supabase_url and settings.supabase_service_key:
@@ -75,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(chats_router)
     app.include_router(recipe_book_router)
     app.include_router(recipe_magazine_router)
+    app.include_router(yandex_alice_router)
 
     @app.exception_handler(ModelReportedError)
     async def model_reported_error_handler(
