@@ -8,6 +8,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI, RateLimitError
 from openai.types.responses.response_format_text_json_schema_config_param import (
@@ -27,6 +28,7 @@ from llm.errors import (
     ValidationFailedError,
 )
 from llm.schemas import RawRecipe
+from llm.usage_logging import call_with_usage_logging
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -93,22 +95,39 @@ def _parse_raw_recipe(output_text: str) -> RawRecipe:
     return RawRecipe.model_validate(data)
 
 
-async def _call_structured(client: AsyncOpenAI, model: str, user_message: str) -> str:
+async def _call_structured(
+    client: AsyncOpenAI,
+    model: str,
+    user_message: str,
+    workflow_id: str,
+    attempt: int,
+) -> str:
     input_messages: ResponseInputParam = [
         {"role": "system", "content": _load_system_prompt()},
         {"role": "user", "content": user_message},
     ]
     text_config: ResponseTextConfigParam = {"format": _load_schema_format()}
-    response = await client.responses.create(
+    response = await call_with_usage_logging(
+        lambda: client.responses.create(
+            model=model,
+            input=input_messages,
+            tools=_WEB_SEARCH_TOOLS,
+            text=text_config,
+        ),
+        operation=f"recipe.structured.attempt_{attempt}",
+        workflow_id=workflow_id,
         model=model,
-        input=input_messages,
-        tools=_WEB_SEARCH_TOOLS,
-        text=text_config,
     )
     return response.output_text
 
 
-async def _call_plain_text(client: AsyncOpenAI, model: str, user_message: str) -> str:
+async def _call_plain_text(
+    client: AsyncOpenAI,
+    model: str,
+    user_message: str,
+    workflow_id: str,
+    attempt: int,
+) -> str:
     input_messages: ResponseInputParam = [
         {
             "role": "system",
@@ -116,15 +135,26 @@ async def _call_plain_text(client: AsyncOpenAI, model: str, user_message: str) -
         },
         {"role": "user", "content": user_message},
     ]
-    response = await client.responses.create(
+    response = await call_with_usage_logging(
+        lambda: client.responses.create(
+            model=model,
+            input=input_messages,
+            tools=_WEB_SEARCH_TOOLS,
+        ),
+        operation=f"recipe.search.attempt_{attempt}",
+        workflow_id=workflow_id,
         model=model,
-        input=input_messages,
-        tools=_WEB_SEARCH_TOOLS,
     )
     return response.output_text
 
 
-async def _call_convert_to_json(client: AsyncOpenAI, model: str, plain_text_recipe: str) -> str:
+async def _call_convert_to_json(
+    client: AsyncOpenAI,
+    model: str,
+    plain_text_recipe: str,
+    workflow_id: str,
+    attempt: int,
+) -> str:
     input_messages: ResponseInputParam = [
         {"role": "system", "content": _load_system_prompt()},
         {
@@ -137,10 +167,15 @@ async def _call_convert_to_json(client: AsyncOpenAI, model: str, plain_text_reci
         },
     ]
     text_config: ResponseTextConfigParam = {"format": _load_schema_format()}
-    response = await client.responses.create(
+    response = await call_with_usage_logging(
+        lambda: client.responses.create(
+            model=model,
+            input=input_messages,
+            text=text_config,
+        ),
+        operation=f"recipe.convert.attempt_{attempt}",
+        workflow_id=workflow_id,
         model=model,
-        input=input_messages,
-        text=text_config,
     )
     return response.output_text
 
@@ -159,12 +194,22 @@ async def generate_raw_recipe(
     client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout_seconds)
     user_message = _build_user_message(prompt, allergies, preferred_units)
     model = settings.openai_model
+    workflow_id = uuid4().hex
+    attempt = 0
 
     async def _run_once() -> str:
+        nonlocal attempt
+        attempt += 1
         if settings.two_step_mode:
-            plain_text = await _call_plain_text(client, model, user_message)
-            return await _call_convert_to_json(client, model, plain_text)
-        return await _call_structured(client, model, user_message)
+            plain_text = await _call_plain_text(
+                client, model, user_message, workflow_id, attempt
+            )
+            return await _call_convert_to_json(
+                client, model, plain_text, workflow_id, attempt
+            )
+        return await _call_structured(
+            client, model, user_message, workflow_id, attempt
+        )
 
     try:
         try:

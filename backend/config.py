@@ -14,6 +14,9 @@ class BackendSettings(BaseSettings):
     the frontend uses. Bypasses RLS, since the backend enforces user scoping
     itself (see docs/chat_contract.md, "User scoping")."""
 
+    yandex_alice_skill_id: str | None = None
+    """Optional skill id used to reject webhook payloads for another skill."""
+
 
 def get_backend_settings() -> BackendSettings:
     return BackendSettings()
