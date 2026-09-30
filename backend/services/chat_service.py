@@ -31,6 +31,7 @@ from backend.services.recipe_patch import (
 from llm.chat_responder import respond_to_message
 from llm.chat_schemas import HistoryMessage
 from llm.config import get_llm_settings
+from llm.language import OutputLanguage
 from llm.recipe_generator import generate_raw_recipe
 from llm.schemas import RawRecipe
 
@@ -109,8 +110,9 @@ async def start_chat(
     prompt: str,
     allergies: str | None = None,
     preferred_units: str | None = None,
+    language: OutputLanguage | None = None,
 ) -> tuple[str, RecipeVersion]:
-    raw_recipe = await generate_raw_recipe(prompt, allergies, preferred_units)
+    raw_recipe = await generate_raw_recipe(prompt, allergies, preferred_units, language=language)
     raw_recipe = _normalize_step_numbers(raw_recipe)
     recipe = await compose_recipe(raw_recipe)
 
@@ -154,6 +156,7 @@ async def send_message(
     user_id: str,
     chat_id: str,
     text: str,
+    language: OutputLanguage | None = None,
 ) -> SendMessageResponse:
     chat = await chat_repo.get_chat(user_id, chat_id)
     if chat is None:
@@ -172,7 +175,7 @@ async def send_message(
         chat_id, ChatMessage(id=str(uuid.uuid4()), role="user", content=text, created_at=now)
     )
 
-    response = await respond_to_message(latest.raw_recipe, history, text)
+    response = await respond_to_message(latest.raw_recipe, history, text, language=language)
 
     if response.intent == "answer":
         await chat_repo.append_message(
@@ -194,7 +197,7 @@ async def send_message(
         patch_result = apply_operations(latest.raw_recipe, operations)
     except PatchError as first_error:
         retry_response = await respond_to_message(
-            latest.raw_recipe, history, text, patch_error=str(first_error)
+            latest.raw_recipe, history, text, patch_error=str(first_error), language=language
         )
         if retry_response.intent != "revise" or not retry_response.operations:
             raise RevisionFailedError(
@@ -210,7 +213,7 @@ async def send_message(
                     f"Patch still invalid after retry: {second_error}"
                 ) from second_error
             fallback_prompt = _build_fallback_prompt(latest.raw_recipe, text)
-            new_raw = await generate_raw_recipe(fallback_prompt)
+            new_raw = await generate_raw_recipe(fallback_prompt, language=language)
             new_raw = _normalize_step_numbers(new_raw)
             patch_result = PatchResult(recipe=new_raw, change_log=[], warnings=[])
             response = retry_response

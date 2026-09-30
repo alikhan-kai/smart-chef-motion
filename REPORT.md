@@ -1,5 +1,22 @@
 # Work Log
 
+## Recipe language propagation and dynamic UI translations (2026-09-30)
+
+- Confirmed `90bb5b9` is present on main. It changed the generation prompt but
+  left dynamic recipe UI strings and the two-step Russian override in place.
+- Added optional `language` (`ru`, `en`, `kk`) to generation/chat requests.
+  The browser sends its selected language; generation, revisions, validation
+  retries, and fallback regeneration pass it to the model. API clients that
+  omit it retain prompt-language inference.
+- Translated loading, recipe-card labels, errors, and empty/fallback step titles.
+  Missing step headers no longer expose internal Russian place identifiers.
+- Removed conflicting Russian-only instructions for two-step text and errors.
+  Existing saved recipe content is preserved; test with a new chat/recipe.
+- Verification: 168 mocked backend tests, four Node UI localization checks,
+  and the running Docker HTTP smoke check passed. No paid model call was made.
+- API-cost impact is limited to one short language directive on each existing
+  model call; the change adds no searches, retries, or model requests.
+
 ## GPT-6 Luna model and pricing configuration (2026-09-30)
 
 ### Summary

@@ -56,7 +56,7 @@ async def test_generate_raw_endpoint_success(
 
     assert response.status_code == 200
     assert response.json()["title"] == "Омлет"
-    mock.assert_awaited_once_with("омлет", None, None)
+    mock.assert_awaited_once_with("омлет", None, None, language=None)
 
 
 @pytest.mark.asyncio

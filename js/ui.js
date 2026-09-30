@@ -1,8 +1,8 @@
 // Глобальный массив для шагов рецепта
 window.mockRecipeData = [
     {
-        title: "ИИ не загрузился",
-        desc: "Пожалуйста, подождите или проверьте сервер",
+        title: window.t('recipe_not_ready'),
+        desc: window.t('recipe_wait'),
         timer: null
     }
 ];
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appendMessage(
                 `<div id="${loadingId}" class="flex items-center space-x-2 text-gray-500 italic">
                     <svg class="animate-spin h-5 w-5 text-claude-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 
-                    <span>ИИ придумывает рецепт...</span>
+                    <span data-i18n="recipe_loading">${window.t('recipe_loading')}</span>
                 </div>`, 
                 'ai', 
                 true
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             'Content-Type': 'application/json',
                             'X-User-Id': localStorage.getItem('chefId') || 'test-user'
                         },
-                        body: JSON.stringify({ prompt: text })
+                        body: JSON.stringify({ prompt: text, language: localStorage.getItem('chefLang') || 'ru' })
                     });
                     
                     removeLoading(loadingId);
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             'Content-Type': 'application/json',
                             'X-User-Id': localStorage.getItem('chefId') || 'test-user'
                         },
-                        body: JSON.stringify({ text: text })
+                        body: JSON.stringify({ text: text, language: localStorage.getItem('chefLang') || 'ru' })
                     });
                     
                     removeLoading(loadingId);
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const msg = err.message || '';
                 const isSystemError = msg.includes('Patch') || msg.includes('unknown') || msg.includes('Failed') || msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch');
                 if (isSystemError) {
-                    appendMessage(`<span class="text-red-500">Системная ошибка: ${msg}</span>`, 'ai', true);
+                    appendMessage(`${window.t('recipe_system_error')}: ${msg}`, 'ai', false);
                 } else {
                     appendMessage(msg, 'ai', false);
                 }
@@ -131,7 +131,7 @@ function removeLoading(loadingId) {
 
 async function checkError(response) {
     if (!response.ok) {
-        let errMsg = 'Ошибка сервера (убедитесь, что backend запущен)';
+        let errMsg = window.t('recipe_server_error');
         try {
             const errData = await response.json();
             if (errData.detail) {
@@ -146,16 +146,15 @@ async function checkError(response) {
 // Рендер карточки рецепта
 window.buildMockRecipeData = function(recipe) {
     const steps = (recipe.steps || []).map((step) => {
-                        let placeStr = step.place ? step.place.replace(/_/g, ' ') : '';
-        if (placeStr) placeStr = placeStr.charAt(0).toUpperCase() + placeStr.slice(1);
-        let title = step.header ? step.header : (placeStr ? `Шаг ${step.step_number}: ${placeStr}` : `Шаг ${step.step_number}`);
+        // place is an internal identifier and can be Russian in any recipe language.
+        const title = step.header || `${window.t('step_word')} ${step.step_number}`;
         return {
             title: title,
             desc: step.action,
             timer: step.time_minutes ? Math.round(step.time_minutes * 60) : null
         };
     });
-    return steps.length > 0 ? steps : [{ title: "Пустой рецепт", desc: "Нет шагов.", timer: null }];
+    return steps.length > 0 ? steps : [{ title: window.t('recipe_empty'), desc: window.t('recipe_no_steps'), timer: null }];
 };
 
 function renderRecipeCard(recipe) {
@@ -165,30 +164,30 @@ function renderRecipeCard(recipe) {
     window.mockRecipeData = window.buildMockRecipeData(recipe);
 
     // Ингредиенты
-    let ingredientsHtml = '<div class="mt-3 mb-4"><p class="font-semibold text-gray-800 mb-2">🛒 Ингредиенты:</p><ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">';
+    let ingredientsHtml = `<div class="mt-3 mb-4"><p class="font-semibold text-gray-800 mb-2">🛒 <span data-i18n="recipe_ingredients">${window.t('recipe_ingredients')}</span>:</p><ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">`;
     if (recipe.ingredients && recipe.ingredients.length > 0) {
         recipe.ingredients.forEach(ing => {
             const amount = ing.amount ? ing.amount + ' ' : '';
-            const unit = ing.unit && ing.unit !== 'по вкусу' ? ing.unit + ' ' : '';
+            const unit = ing.unit ? ing.unit + ' ' : '';
             const form = ing.form ? ' (' + ing.form + ')' : '';
             ingredientsHtml += `<li><b>${ing.name}</b> — ${amount}${unit}${form}</li>`;
         });
     } else {
-        ingredientsHtml += `<li>Не указаны</li>`;
+        ingredientsHtml += `<li data-i18n="recipe_not_specified">${window.t('recipe_not_specified')}</li>`;
     }
     ingredientsHtml += '</ul></div>';
 
     // Формируем HTML
     const btnId = 'accept-recipe-btn-' + Date.now();
     const recipeHtml = `
-        <div class="mb-3 font-serif font-bold text-lg text-claude-text">🍳 ${recipe.title || "Ваш рецепт"}</div>
+        <div class="mb-3 font-serif font-bold text-lg text-claude-text">🍳 ${recipe.title || window.t('mock_recipe_title')}</div>
         <div class="text-sm text-gray-700">
-            <p>⏱ Время: ${recipe.total_time_minutes || '?'} мин | 👥 Порций: ${recipe.servings || '?'}</p>
+            <p>⏱ <span data-i18n="recipe_time">${window.t('recipe_time')}</span>: ${recipe.total_time_minutes || '?'} <span data-i18n="recipe_minutes">${window.t('recipe_minutes')}</span> | 👥 <span data-i18n="recipe_servings">${window.t('recipe_servings')}</span>: ${recipe.servings || '?'}</p>
         </div>
         ${ingredientsHtml}
-        <div class="mb-4 text-xs italic opacity-80 text-gray-500">Сгенерировано нейросетью. Страниц (шагов) в книге: ${window.mockRecipeData.length}</div>
-        <button id="${btnId}" class="bg-claude-accent hover:bg-claude-accentHover text-white px-6 py-2 rounded-lg font-medium transition w-full shadow-sm text-center">
-            Готово (Принять рецепт)
+        <div class="mb-4 text-xs italic opacity-80 text-gray-500"><span data-i18n="recipe_generated">${window.t('recipe_generated')}</span> ${window.mockRecipeData.length}</div>
+        <button id="${btnId}" data-i18n="mock_recipe_btn" class="bg-claude-accent hover:bg-claude-accentHover text-white px-6 py-2 rounded-lg font-medium transition w-full shadow-sm text-center">
+            ${window.t('mock_recipe_btn')}
         </button>
     `;
     

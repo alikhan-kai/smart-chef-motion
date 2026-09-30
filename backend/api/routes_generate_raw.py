@@ -11,4 +11,6 @@ router = APIRouter()
 async def generate_raw_endpoint(request: RecipeRequest) -> RawRecipe:
     # Model-reported errors -> 422, post-retry validation failures -> 502;
     # see the exception handlers registered in backend/main.py.
-    return await generate_raw_recipe(request.prompt, request.allergies, request.preferred_units)
+    return await generate_raw_recipe(
+        request.prompt, request.allergies, request.preferred_units, language=request.language
+    )

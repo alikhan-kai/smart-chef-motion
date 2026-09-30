@@ -27,6 +27,7 @@ from llm.errors import (
     UpstreamTimeoutError,
     ValidationFailedError,
 )
+from llm.language import OutputLanguage, language_instruction
 from llm.schemas import RawRecipe
 from llm.usage_logging import call_with_usage_logging
 
@@ -41,7 +42,7 @@ _WEB_SEARCH_TOOLS: list[WebSearchToolParam] = [{"type": "web_search"}]
 
 _TWO_STEP_PLAIN_TEXT_ADDENDUM = (
     "\n\nВАЖНО (переопределение для этого запроса): на этом шаге верни рецепт "
-    "обычным читаемым текстом на русском языке, НЕ в формате JSON. "
+    "обычным читаемым текстом на выбранном языке ответа, НЕ в формате JSON. "
     "JSON понадобится позже."
 )
 
@@ -101,9 +102,10 @@ async def _call_structured(
     user_message: str,
     workflow_id: str,
     attempt: int,
+    language: OutputLanguage | None = None,
 ) -> str:
     input_messages: ResponseInputParam = [
-        {"role": "system", "content": _load_system_prompt()},
+        {"role": "system", "content": _load_system_prompt() + language_instruction(language)},
         {"role": "user", "content": user_message},
     ]
     text_config: ResponseTextConfigParam = {"format": _load_schema_format()}
@@ -127,11 +129,15 @@ async def _call_plain_text(
     user_message: str,
     workflow_id: str,
     attempt: int,
+    language: OutputLanguage | None = None,
 ) -> str:
     input_messages: ResponseInputParam = [
         {
             "role": "system",
-            "content": _load_system_prompt() + _TWO_STEP_PLAIN_TEXT_ADDENDUM,
+            "content": (
+                _load_system_prompt() + _TWO_STEP_PLAIN_TEXT_ADDENDUM
+                + language_instruction(language)
+            ),
         },
         {"role": "user", "content": user_message},
     ]
@@ -154,13 +160,15 @@ async def _call_convert_to_json(
     plain_text_recipe: str,
     workflow_id: str,
     attempt: int,
+    language: OutputLanguage | None = None,
 ) -> str:
     input_messages: ResponseInputParam = [
-        {"role": "system", "content": _load_system_prompt()},
+        {"role": "system", "content": _load_system_prompt() + language_instruction(language)},
         {
             "role": "user",
             "content": (
                 "Преобразуй следующий рецепт в строгий JSON по схеме. "
+                "Сохрани язык текста рецепта, а не язык этой инструкции. "
                 "Не выполняй новый поиск, используй только этот текст:\n\n"
                 f"{plain_text_recipe}"
             ),
@@ -184,6 +192,7 @@ async def generate_raw_recipe(
     prompt: str,
     allergies: str | None = None,
     preferred_units: str | None = None,
+    language: OutputLanguage | None = None,
 ) -> RawRecipe:
     """Generate one strict-JSON recipe via OpenAI web search + structured output.
 
@@ -202,13 +211,13 @@ async def generate_raw_recipe(
         attempt += 1
         if settings.two_step_mode:
             plain_text = await _call_plain_text(
-                client, model, user_message, workflow_id, attempt
+                client, model, user_message, workflow_id, attempt, language
             )
             return await _call_convert_to_json(
-                client, model, plain_text, workflow_id, attempt
+                client, model, plain_text, workflow_id, attempt, language
             )
         return await _call_structured(
-            client, model, user_message, workflow_id, attempt
+            client, model, user_message, workflow_id, attempt, language
         )
 
     try:

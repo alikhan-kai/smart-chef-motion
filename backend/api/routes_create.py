@@ -9,4 +9,6 @@ router = APIRouter()
 
 @router.post("/recipes/create", response_model=Recipe)
 async def create_recipe_endpoint(request: RecipeRequest) -> Recipe:
-    return await create_recipe(request.prompt, request.allergies, request.preferred_units)
+    return await create_recipe(
+        request.prompt, request.allergies, request.preferred_units, language=request.language
+    )

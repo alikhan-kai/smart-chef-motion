@@ -108,6 +108,19 @@ window.translations = {
         
         // Динамика
         step_word: "Шаг",
+        recipe_loading: "ИИ придумывает рецепт...",
+        recipe_not_ready: "Рецепт ещё не загружен",
+        recipe_wait: "Пожалуйста, подождите или проверьте сервер",
+        recipe_empty: "Пустой рецепт",
+        recipe_no_steps: "Нет шагов.",
+        recipe_ingredients: "Ингредиенты",
+        recipe_not_specified: "Не указаны",
+        recipe_time: "Время",
+        recipe_minutes: "мин",
+        recipe_servings: "Порций",
+        recipe_generated: "Сгенерировано нейросетью. Шагов в книге:",
+        recipe_server_error: "Ошибка сервера (убедитесь, что backend запущен)",
+        recipe_system_error: "Системная ошибка",
         out_of: "из",
         mock_recipe_title: "Сгенерированный рецепт",
         mock_recipe_li1: "Свежие ингредиенты подготовлены",
@@ -221,6 +234,19 @@ window.translations = {
         
         // Динамика
         step_word: "Step",
+        recipe_loading: "AI is creating your recipe...",
+        recipe_not_ready: "Recipe not loaded yet",
+        recipe_wait: "Please wait or check the server",
+        recipe_empty: "Empty recipe",
+        recipe_no_steps: "No steps.",
+        recipe_ingredients: "Ingredients",
+        recipe_not_specified: "Not specified",
+        recipe_time: "Time",
+        recipe_minutes: "min",
+        recipe_servings: "Servings",
+        recipe_generated: "AI-generated recipe. Steps in the book:",
+        recipe_server_error: "Server error (check that the backend is running)",
+        recipe_system_error: "System error",
         out_of: "of",
         mock_recipe_title: "Generated Recipe",
         mock_recipe_li1: "Fresh ingredients are ready",
@@ -334,6 +360,19 @@ window.translations = {
         
         // Динамика
         step_word: "Қадам",
+        recipe_loading: "ЖИ рецепт дайындап жатыр...",
+        recipe_not_ready: "Рецепт әлі жүктелмеді",
+        recipe_wait: "Күте тұрыңыз немесе серверді тексеріңіз",
+        recipe_empty: "Бос рецепт",
+        recipe_no_steps: "Қадамдар жоқ.",
+        recipe_ingredients: "Ингредиенттер",
+        recipe_not_specified: "Көрсетілмеген",
+        recipe_time: "Уақыт",
+        recipe_minutes: "мин",
+        recipe_servings: "Порция саны",
+        recipe_generated: "ЖИ жасаған рецепт. Кітаптағы қадамдар:",
+        recipe_server_error: "Сервер қатесі (бэкенд іске қосылғанын тексеріңіз)",
+        recipe_system_error: "Жүйелік қате",
         out_of: "/",
         mock_recipe_title: "Генерацияланған рецепт",
         mock_recipe_li1: "Балғын ингредиенттер дайын",
@@ -344,7 +383,9 @@ window.translations = {
 
 // Главная функция перевода страницы
 window.changeLanguage = function(lang) {
+    if (!window.translations[lang]) lang = 'ru';
     localStorage.setItem('chefLang', lang);
+    document.documentElement.lang = lang;
     
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('bg-white', 'shadow-sm', 'text-claude-text');

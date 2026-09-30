@@ -23,7 +23,7 @@ async def start_chat_endpoint(
     chat_repo: ChatRepository = Depends(get_chat_repository),
 ) -> StartChatResponse:
     chat_id, version = await chat_service.start_chat(
-        chat_repo, user_id, body.prompt, body.allergies, body.preferred_units
+        chat_repo, user_id, body.prompt, body.allergies, body.preferred_units, body.language
     )
     return StartChatResponse(chat_id=chat_id, version=version.version, recipe=version.recipe)
 
@@ -35,7 +35,7 @@ async def send_message_endpoint(
     user_id: str = Depends(get_user_id),
     chat_repo: ChatRepository = Depends(get_chat_repository),
 ) -> SendMessageResponse:
-    return await chat_service.send_message(chat_repo, user_id, chat_id, body.text)
+    return await chat_service.send_message(chat_repo, user_id, chat_id, body.text, body.language)
 
 
 @router.post("/chats/{chat_id}/confirm", response_model=RecipeBookEntry)

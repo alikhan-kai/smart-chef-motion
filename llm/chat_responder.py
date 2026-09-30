@@ -29,6 +29,7 @@ from llm.errors import (
     UpstreamTimeoutError,
     ValidationFailedError,
 )
+from llm.language import OutputLanguage, language_instruction
 from llm.schemas import RawRecipe
 from llm.usage_logging import call_with_usage_logging
 
@@ -73,12 +74,14 @@ def _build_input(
     history: list[HistoryMessage],
     user_message: str,
     patch_error: str | None,
+    language: OutputLanguage | None = None,
 ) -> ResponseInputParam:
     settings = get_llm_settings()
     truncated_history = history[-settings.revise_history_messages :]
 
     system_content = (
-        _load_system_prompt() + "\n\n# ТЕКУЩИЙ РЕЦЕПТ (JSON)\n" + current_recipe.model_dump_json()
+        _load_system_prompt() + language_instruction(language)
+        + "\n\n# ТЕКУЩИЙ РЕЦЕПТ (JSON)\n" + current_recipe.model_dump_json()
     )
     messages: ResponseInputParam = [{"role": "system", "content": system_content}]
     for message in truncated_history:
@@ -141,6 +144,7 @@ async def respond_to_message(
     history: list[HistoryMessage],
     user_message: str,
     patch_error: str | None = None,
+    language: OutputLanguage | None = None,
 ) -> ChatResponse:
     """One chat turn: classify the message as a question or a revision request.
 
@@ -162,7 +166,7 @@ async def respond_to_message(
     settings = get_llm_settings()
     client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout_seconds)
     model = settings.revise_model or settings.openai_model
-    input_messages = _build_input(current_recipe, history, user_message, patch_error)
+    input_messages = _build_input(current_recipe, history, user_message, patch_error, language)
     workflow_id = uuid4().hex
     attempt = 1
 

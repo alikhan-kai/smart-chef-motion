@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from backend.schemas.recipe import Recipe
 from backend.schemas.requests import RecipeRequest
 from backend.services.recipe_patch import ChangeLogEntry
+from llm.language import OutputLanguage
 
 # POST /chats reuses RecipeRequest (prompt, allergies, preferred_units) - same
 # body shape as POST /recipes/create.
@@ -23,6 +24,7 @@ class StartChatResponse(BaseModel):
 
 class SendMessageRequest(BaseModel):
     text: str
+    language: OutputLanguage | None = None
 
 
 class SendMessageResponse(BaseModel):
